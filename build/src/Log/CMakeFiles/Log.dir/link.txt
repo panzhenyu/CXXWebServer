@@ -1,2 +1,0 @@
-/usr/bin/ar qc libLog.a  CMakeFiles/Log.dir/AsyncLogger.cc.o
-/usr/bin/ranlib libLog.a

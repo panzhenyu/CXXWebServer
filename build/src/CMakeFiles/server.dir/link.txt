@@ -1,1 +1,0 @@
-/usr/bin/c++  -g -std=c++11   CMakeFiles/server.dir/Epoll.cc.o CMakeFiles/server.dir/Event.cc.o CMakeFiles/server.dir/IOEventHandler.cc.o CMakeFiles/server.dir/ListenEventHandler.cc.o CMakeFiles/server.dir/main.cc.o CMakeFiles/server.dir/Server.cc.o CMakeFiles/server.dir/Worker.cc.o  -o server  -lpthread HttpUtils/libHttpUtils.a Log/libLog.a 

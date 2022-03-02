@@ -1,2 +1,0 @@
-/usr/bin/ar qc libHttpUtils.a  CMakeFiles/HttpUtils.dir/HttpConfig.cc.o CMakeFiles/HttpUtils.dir/HttpRequest.cc.o CMakeFiles/HttpUtils.dir/SocketStream.cc.o
-/usr/bin/ranlib libHttpUtils.a

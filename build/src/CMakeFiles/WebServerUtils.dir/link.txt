@@ -1,2 +1,0 @@
-/usr/bin/ar qc libWebServerUtils.a  CMakeFiles/WebServerUtils.dir/Epoll.cc.o CMakeFiles/WebServerUtils.dir/Event.cc.o CMakeFiles/WebServerUtils.dir/IOEventHandler.cc.o CMakeFiles/WebServerUtils.dir/ListenEventHandler.cc.o CMakeFiles/WebServerUtils.dir/main.cc.o CMakeFiles/WebServerUtils.dir/Server.cc.o CMakeFiles/WebServerUtils.dir/Worker.cc.o
-/usr/bin/ranlib libWebServerUtils.a

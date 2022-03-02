@@ -1,1 +1,0 @@
-/usr/bin/c++  -g -std=c++11   CMakeFiles/SocketStreamBufferTest.dir/SocketStreamBufferTest.cc.o  -o SocketStreamBufferTest  ../HttpUtils/libHttpUtils.a ../libWebServerUtils.a 

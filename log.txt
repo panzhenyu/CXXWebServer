@@ -1,0 +1,42 @@
+2022.2.26
+    1. 修复了在worker启动后为其添加新的event而出现segmentation fault的问题
+        问题原因：worker的eventAdd与eventPoll并发时，由于他们都需要引用__events这个数据结构，当eventPoll因为eventAdd新添加的
+        文件描述符而返回后，可能此时eventAdd还没有将Event指针加入__events，最终导致了eventPoll取到空指针，造成handleEvent部分
+        访问异常。
+        解决措施：将epoll_ctl新增、删除操作与__events更新操作封装为原子操作，使得epoll_wait能够取到正确的指针。对于删除操作而
+        言，存在这种情况：epoll_wait返回后，删除操作再进行，此时epoll_wait可能无法正常获取到目标文件描述符(刚刚被删除)，因此需
+        在eventPoll中处理文件描述符不存在的情况(__events中找不到时直接跳过)。
+    2. 两个新问题：
+        1) eventDel造成的segmentation fault：每次io worker响应后直接调用_event->getWorker()->eventDel，最终会出现segmentation
+        fault，若将上述调用改为close(fd)，则不会出现段错误，因此判断应该是eventDel出现了问题。
+        2) 有时候server初始化(此时worker未进入running状态，但可能已经初始化完毕了)时会直接产生段错误，使用gdb调试发现错误的原因是
+        程序接收到了SIGSEGV信号(无效内存访问导致的)，导致该信号出现的源头为std::__atomic_base<bool>::operator=(bool)，暂未找到
+        合适的解决办法。
+
+2022.2.27
+    1. 解决了26号的问题2，原因在于start失败时，释放资源部分没有判断worker是否已经创建完毕，因此造成了错误的引用。现在在stop函数与
+    析构中均考虑了智能指针空引用(worker未被创建)的情况，不会再出现段错误。
+    2. 解决了26号的问题1，原因在于addEvent时，先进行epollAddEvent，再设置Worker指针，此时若对event的handler发生在设置worker指针
+    之前，在handler中引用worker指针就会发生段错误。
+    3. 26号的两个段错误问题都在于worker中的event control事件和event wait事件都可以同时发生，若没有细致处理两类调用所引用的临界区
+    资源，就会引发段错误，一个可行的解决办法是将event control事件延迟到下一次event wait去处理，由于event wait不会同时发生，这样就
+    能保证每次event_wait与handle_event的在Event资源上的视角是一致的。
+
+2022.2.28
+    1. 对Event的销毁完全交给智能指针来做，现在外部事件只需要将Event从Epoll里删除即可，这样可以保证将要被handle的Event能够在正常
+    处理结束后自行释放。
+
+2022.3.1
+    1. 添加了CMakeLists.txt，现在构建项目更方便。
+    2. 添加了SocketStreamBuffer类，使得[i/o]stream可以用于读写socket。
+    3. 实现了HttpRequest.cc部分类方法。
+    4. 构思了Logger。
+
+2022.3.2
+    1. 测试了SocketStreamBuffer类，并简单包装了istream、ostream为SocketInputStream、SocketOutputStream，使得这两类流可以自动
+    释放SocketStreamBuffer资源。
+    2. 一个新问题：
+        1) 在服务端关闭客户端链接后再使用SocketOutputStream写入字符，不会触发SIGPIPE，但是使用send发送则会触发SIGPIPE。
+    3. 一次异常：
+        1) IOEventHandler首次简单使用SocketOutputStream响应客户端时，发生过一次异常退出，但是没有提示段错误，后续用GDB测试再也
+        没有发生异常退出的情况，推测该次异常退出来源于服务端没有处理SIGPIPE信号。

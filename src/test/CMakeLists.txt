@@ -1,0 +1,3 @@
+add_executable(SocketStreamBufferTest SocketStreamBufferTest.cc)
+
+target_link_libraries(SocketStreamBufferTest HttpUtils WebServerUtils)

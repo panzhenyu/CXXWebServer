@@ -1,0 +1,46 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/home/panda/cpp/WebServer/src/Error.hpp
+
+/home/panda/cpp/WebServer/src/HttpUtils/HttpConfig.hpp
+string
+-
+ostream
+-
+unordered_map
+-
+
+/home/panda/cpp/WebServer/src/HttpUtils/HttpRequest.cc
+HttpRequest.hpp
+/home/panda/cpp/WebServer/src/HttpUtils/HttpRequest.hpp
+
+/home/panda/cpp/WebServer/src/HttpUtils/HttpRequest.hpp
+string
+-
+memory
+-
+unordered_map
+-
+../Error.hpp
+/home/panda/cpp/WebServer/src/Error.hpp
+HttpConfig.hpp
+/home/panda/cpp/WebServer/src/HttpUtils/HttpConfig.hpp
+SocketStream.hpp
+/home/panda/cpp/WebServer/src/HttpUtils/SocketStream.hpp
+
+/home/panda/cpp/WebServer/src/HttpUtils/SocketStream.hpp
+streambuf
+-
+istream
+-
+ostream
+-
+memory
+-
+

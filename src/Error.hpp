@@ -7,6 +7,8 @@ enum Error {
     SOCKET_INIT_FAILED, 
     SOCKET_BIND_FAILED, 
     SOCKET_LISTEN_FAILED, 
+    LISTEN_WORKER_DUMP, 
+    IO_WORKER_DUMP, 
     SAME_CLIENT_FD, 
     INVALID_EPOLL_FD, 
     MAX_EVENT_NUM, 
@@ -16,9 +18,14 @@ enum Error {
     EPOLL_EVENT_DEL_FAILED, 
     EPOLL_EVENT_MOD_FAILED, 
     EPOLL_WAIT_FAILED, 
+    PARSE_REQ_METHOD_FAILED, 
+    PARSE_REQ_URI_FAILED, 
+    PARSE_REQ_VERSION_FAILED, 
+    PARSE_REQ_HEADER_FAILED, 
+    PARSE_REQ_BODY_FAILED, 
 };
 
-static const char* errMsg[] = {
-    "OK",
-    "Socket Init Failed",
-};
+// static const char* errMsg[] = {
+//     "OK",
+//     "Socket Init Failed",
+// };

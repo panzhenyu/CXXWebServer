@@ -7,7 +7,6 @@
 using namespace std;
 
 int main() {
-    server_err_t error;
     socklen_t socketLen;
     int __listenFD, clientFD;
     sockaddr_in __serverAddress, cad;
@@ -20,17 +19,44 @@ int main() {
     __serverAddress.sin_family = DOMAIN;
     if (-1 == (__listenFD=socket(DOMAIN, SOCK_STREAM, PROTO))) return SOCKET_INIT_FAILED;
     if (-1 == bind(__listenFD, (sockaddr*)&__serverAddress, sizeof(sockaddr))) return SOCKET_BIND_FAILED;
-    if (-1 == listen(__listenFD, 5)) return SOCKET_LISTEN_FAILED;
-    if (-1 == (clientFD=accept(__listenFD, (sockaddr*)&cad, &socketLen))) return -1;
+    if (-1 == listen(__listenFD, 5)) { close(__listenFD); return SOCKET_LISTEN_FAILED; }
+    if (-1 == (clientFD=accept(__listenFD, (sockaddr*)&cad, &socketLen))) { close(__listenFD); return -1; }
+
+    // char buff[4096];
+    // recv(clientFD, buff, 4096, 0);
+    // cout << buff << endl;
 
     iss = std::make_unique<SocketInputStream>(std::make_shared<SocketStreamBuffer>(clientFD));
     oss = std::make_unique<SocketOutputStream>(std::make_shared<SocketStreamBuffer>(clientFD));
-    while (iss && !iss->eof()) {
-        getline(*iss, msg);
-        cout << msg << endl;
-        *oss << msg << '\n';
-    }
-    *oss << msg << '\n';        // why not trigger sigpipe ?
-    *oss << msg << '\n';
-    // cout << "final send rets " << send(clientFD, "abc", 3, 0) << endl;
+
+    *iss >> msg; cout << msg << "|" << endl;
+    *iss >> msg; cout << msg << "|" << endl;
+    *iss >> msg; cout << msg << "|" << endl;
+    getline(*iss, msg); cout << msg << " " << (int)msg[0] << endl;
+    getline(*iss, msg); cout << msg << endl;
+    getline(*iss, msg); cout << msg << endl;
+    getline(*iss, msg); cout << msg << endl;
+    getline(*iss, msg); cout << msg << endl;
+    getline(*iss, msg); cout << msg << endl;
+    getline(*iss, msg); cout << msg << endl;
+    getline(*iss, msg); cout << msg << endl;
+    getline(*iss, msg); cout << msg << endl;
+    getline(*iss, msg); cout << msg << endl;
+    getline(*iss, msg); cout << msg << endl;
+    getline(*iss, msg); cout << msg << endl;
+    getline(*iss, msg); cout << msg << endl;
+    getline(*iss, msg); cout << msg << endl;
+    getline(*iss, msg); cout << msg << endl;
+    getline(*iss, msg); cout << msg << endl;
+    getline(*iss, msg); cout << msg << endl;
+    getline(*iss, msg); cout << msg << endl;
+    getline(*iss, msg); cout << msg << endl;
+    getline(*iss, msg); cout << msg << endl;
+    // while (iss && !iss->eof()) {
+    //     getline(*iss, msg);
+    //     cout << msg << endl;
+    //     *oss << msg << '\n';
+    // }
+    close(clientFD);
+    close(__listenFD);
 }

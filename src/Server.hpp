@@ -8,6 +8,7 @@
 #include <unistd.h>
 #include <netinet/in.h>
 #include <unordered_map>
+#include "Error.hpp"
 
 #define DOMAIN      AF_INET
 #define PROTO       IPPROTO_TCP
@@ -19,15 +20,6 @@ struct ServerConfig {
     uint32_t __serverAddr;
     uint16_t __serverPort;
     uint16_t __listenQueue;
-};
-
-static ServerConfig defaultCfg = {
-    .__maxFD = 100000, 
-    .__clientTimeoutSecond = 60, 
-    .__workerNum = 7, 
-    .__serverAddr = INADDR_ANY, 
-    .__serverPort = 8888, 
-    .__listenQueue = 1000, 
 };
 
 class Event;
@@ -56,7 +48,8 @@ public:
     Server(const char* _cfgPath);
     Server(const Server&) = delete;
     ~Server();
-    int start();
-    int stop();
+    server_err_t start();
+    void stop();
     bool isRunning();
+    server_err_t statusChecking();
 };

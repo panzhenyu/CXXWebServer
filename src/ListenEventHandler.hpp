@@ -12,6 +12,6 @@ class ListenEventHandler: public IEventHandler {
 public:
     ListenEventHandler(std::vector<std::shared_ptr<Worker>>&);
     ListenEventHandler(const ListenEventHandler&) = delete;
-    ~ListenEventHandler();
+    ~ListenEventHandler() = default;
     virtual int handle(event_sptr_t);
 };

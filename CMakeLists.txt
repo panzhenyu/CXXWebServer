@@ -10,7 +10,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED true)
 # set compiler flags
 set(CXX_FLAGS
     -g
-    # -Wall
+    -Wall
     -std=c++11
 )
 string(REPLACE ";" " " CMAKE_CXX_FLAGS "${CXX_FLAGS}")

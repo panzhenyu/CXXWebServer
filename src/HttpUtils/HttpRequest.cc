@@ -62,11 +62,16 @@ IHttpReqeustBuilder& HttpRequestBuilder::setBody(HttpRequest::body_t& _body) {
 }
 
 server_err_t HttpRequestAnalyser::parseLine(HttpRequestBuilder& _builder) {
-    HttpVersion v = HttpVersion::HTTP_1_0;
-    HttpRequestMethod m = HttpRequestMethod::GET;
+    HttpVersion v;
+    HttpRequestMethod m;
     std::string method, uri, version;
 
-    *__input >> method >> uri >> version;
+    *__input >> method;
+    if (__input->fail() || UNKNOWN_REQUEST_METHOD==(m=toRequestMethod(method))) return PARSE_REQ_METHOD_FAILED;
+    *__input >> uri;
+    if (__input->fail()) return PARSE_REQ_URI_FAILED;
+    *__input >> version;
+    if (__input->fail() || UNKNOWN_HTTP_VERSION==(v=toHttpVersion(version))) return PARSE_REQ_VERSION_FAILED;
 
     _builder.setRequestMethod(m).setURI(uri).setHttpVersion(v);
     return SERVER_OK;

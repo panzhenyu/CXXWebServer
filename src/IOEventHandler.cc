@@ -23,11 +23,11 @@ int IOEventHandler::handle(event_sptr_t _event) {
     in = std::make_unique<SocketInputStream>(std::make_shared<SocketStreamBuffer>(fd));
     out = std::make_unique<SocketOutputStream>(std::make_shared<SocketStreamBuffer>(fd));
     getline(*in, line);
-    
+    std::cout << line << std::endl;
     if (line[0] == 'G')
-        // *out << "HTTP/1.0" << " " << 200 << " " << "OK" << "\n"
-        //     << "Content-Length: 5" << "\n" << "\n" << "Hello";
-        send(fd, "HTTP/1.0 200 OK\nContent-Length: 5\n\nHello", 41, 0);
+        *out << "HTTP/1.0" << " " << 200 << " " << "OK" << "\n"
+            << "Content-Length: 5" << "\n" << "\n" << "Hello";
+        // send(fd, "HTTP/1.0 200 OK\nContent-Length: 5\n\nHello", 41, 0);
 
     assert(_event);
     assert(_event->getWorker());

@@ -52,24 +52,21 @@ int Worker::activeFDS() { return __eventPoller->activeFDS(); }
 int Worker::run() {
     if (__running) return WORKER_ALREADY_RUNNING;
     __running = true;
-    try {
-        std::thread t([this] () {
-            server_err_t error;
-            while (isRunning()) {
-                auto events = eventPoll(error, -1);
-                if (SERVER_OK != error) break;
-                for (auto& e : events) {
-                    handleEvent(e);
-                }
-                events.clear();
+    std::thread t([this] () {
+        server_err_t error;
+        while (isRunning()) {
+            auto events = eventPoll(error, -1);
+            if (SERVER_OK != error) break;
+            for (auto& e : events) {
+                handleEvent(e);
             }
-            __running = false; return;
-        });
-        t.detach(); __threadID = t.get_id();
-    } catch (std::system_error& e) {
-        // log?
-        return WORKER_START_FAILED;
-    }
+            events.clear();
+        }
+        __running = false;
+        std::cout << "worker exit with err " << error << std::endl;
+        return;
+    });
+    t.detach(); __threadID = t.get_id();
     if (!isRunning()) return WORKER_START_FAILED;
     return SERVER_OK;
 }

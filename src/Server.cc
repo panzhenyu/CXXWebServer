@@ -9,6 +9,15 @@
 #include "IOEventHandler.hpp"
 #include "ListenEventHandler.hpp"
 
+static ServerConfig defaultCfg = {
+    .__maxFD = 100000, 
+    .__clientTimeoutSecond = 60, 
+    .__workerNum = 7, 
+    .__serverAddr = INADDR_ANY, 
+    .__serverPort = 8888, 
+    .__listenQueue = 1000, 
+};
+
 void Server::loadCfgFrom(std::string _cfgPath) {
     // load config from path
 }
@@ -38,7 +47,7 @@ Server::~Server() {
 /*
  * Initialize resources for server and start worker threads
  */
-int Server::start() {
+server_err_t Server::start() {
     int i, maxFDS, flags;
     server_err_t error;
     worker_sptr_t worker;
@@ -78,18 +87,24 @@ int Server::start() {
     if (!__listenWorker->isRunning()) { error = WORKER_START_FAILED; goto stop; }
     __running = true;
     goto out;
-
 stop:
     stop();
 out:
     return error;
 }
 
-int Server::stop() {
+void Server::stop() {
     __running = false;
     for (auto& ioWorker : __ioWorkers) if (ioWorker && ioWorker->isRunning()) ioWorker->stop();
     if (__listenWorker && __listenWorker->isRunning()) __listenWorker->stop();
-    return SERVER_OK;
 }
 
 bool Server::isRunning() { return __running; }
+
+server_err_t Server::statusChecking() {
+    if (!__listenWorker->isRunning()) return LISTEN_WORKER_DUMP;
+    for (auto& ioWorker : __ioWorkers) {
+        if (!ioWorker->isRunning()) return IO_WORKER_DUMP;
+    }
+    return SERVER_OK;
+}

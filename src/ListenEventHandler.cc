@@ -1,5 +1,8 @@
 #include <fcntl.h>
+#include <errno.h>
+#include <iostream>
 #include <unistd.h>
+#include <string.h>
 #include <sys/epoll.h>
 #include "Event.hpp"
 #include "Worker.hpp"
@@ -9,21 +12,18 @@ ListenEventHandler::ListenEventHandler(std::vector<std::shared_ptr<Worker>>& _wo
     for (auto& spWorker : _workers) __ioWorkers.push_back(spWorker);
 }
 
-ListenEventHandler::~ListenEventHandler() {}
-
 int ListenEventHandler::handle(event_sptr_t _event) {
     // distribute client fd into io workers
-    sockaddr addr;
-    socklen_t len;
+    size_t i;
     std::shared_ptr<Worker> cur;
-    int listenedFD, clientFD, flags, i;
+    int listenedFD, clientFD, flags;
 
-    listenedFD = _event->getFD();
-    while (-1 != (clientFD=accept(listenedFD, &addr, &len))) {
+    listenedFD = _event->getFD(); clientFD = -1;
+    while (-1 != (clientFD=accept(listenedFD, NULL, NULL))) {
         // 1. set non-block fd & build Event
         if (-1 == (flags=fcntl(clientFD, F_GETFL, 0))) { close(clientFD); continue; }
         fcntl(clientFD, F_SETFL, flags | O_NONBLOCK);
-        
+
         // 2. find an IO Worker
         for (i=0; i<__ioWorkers.size(); ++i) {
             cur = __ioWorkers[i].lock();
@@ -37,5 +37,6 @@ int ListenEventHandler::handle(event_sptr_t _event) {
         __ioWorkers.erase(__ioWorkers.begin()+i);
         __ioWorkers.push_back(cur);
     }
+    std::cout << "exit listen event with errno " << errno << " " << strerror(errno) << std::endl;
     return SERVER_OK;
 }

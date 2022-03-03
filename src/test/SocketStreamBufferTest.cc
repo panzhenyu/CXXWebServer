@@ -21,42 +21,21 @@ int main() {
     if (-1 == bind(__listenFD, (sockaddr*)&__serverAddress, sizeof(sockaddr))) return SOCKET_BIND_FAILED;
     if (-1 == listen(__listenFD, 5)) { close(__listenFD); return SOCKET_LISTEN_FAILED; }
     if (-1 == (clientFD=accept(__listenFD, (sockaddr*)&cad, &socketLen))) { close(__listenFD); return -1; }
+    
+    ssize_t recvlen, i;
+    char buff[4096];
+    recvlen =  recv(clientFD, buff, 4096, 0);
+    for (i=0; i<recvlen; ++i) printf("%c", buff[i]);
+    printf("\n");
 
-    // char buff[4096];
-    // recv(clientFD, buff, 4096, 0);
-    // cout << buff << endl;
-
-    iss = std::make_unique<SocketInputStream>(std::make_shared<SocketStreamBuffer>(clientFD));
-    oss = std::make_unique<SocketOutputStream>(std::make_shared<SocketStreamBuffer>(clientFD));
-
-    *iss >> msg; cout << msg << "|" << endl;
-    *iss >> msg; cout << msg << "|" << endl;
-    *iss >> msg; cout << msg << "|" << endl;
-    getline(*iss, msg); cout << msg << " " << (int)msg[0] << endl;
-    getline(*iss, msg); cout << msg << endl;
-    getline(*iss, msg); cout << msg << endl;
-    getline(*iss, msg); cout << msg << endl;
-    getline(*iss, msg); cout << msg << endl;
-    getline(*iss, msg); cout << msg << endl;
-    getline(*iss, msg); cout << msg << endl;
-    getline(*iss, msg); cout << msg << endl;
-    getline(*iss, msg); cout << msg << endl;
-    getline(*iss, msg); cout << msg << endl;
-    getline(*iss, msg); cout << msg << endl;
-    getline(*iss, msg); cout << msg << endl;
-    getline(*iss, msg); cout << msg << endl;
-    getline(*iss, msg); cout << msg << endl;
-    getline(*iss, msg); cout << msg << endl;
-    getline(*iss, msg); cout << msg << endl;
-    getline(*iss, msg); cout << msg << endl;
-    getline(*iss, msg); cout << msg << endl;
-    getline(*iss, msg); cout << msg << endl;
-    getline(*iss, msg); cout << msg << endl;
+    // iss = std::make_unique<SocketInputStream>(std::make_shared<SocketStreamBuffer>(clientFD));
+    // oss = std::make_unique<SocketOutputStream>(std::make_shared<SocketStreamBuffer>(clientFD));
     // while (iss && !iss->eof()) {
     //     getline(*iss, msg);
     //     cout << msg << endl;
     //     *oss << msg << '\n';
     // }
-    close(clientFD);
-    close(__listenFD);
+    // close(clientFD);
+    // close(__listenFD);
+    while(1);
 }

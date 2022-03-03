@@ -34,7 +34,7 @@ Server::Server(const char* _cfgPath):
     __serverAddress.sin_port = htons(__serverCfg.__serverPort);
     __serverAddress.sin_family = DOMAIN;
 }
-
+#include <iostream>
 Server::~Server() {
     // 1. stop all thread
     if (isRunning()) stop();
@@ -42,6 +42,7 @@ Server::~Server() {
     __ioWorkers.clear();
     __listenWorker.reset();
     if (-1 != __listenFD) close(__listenFD);
+    std::cout << "server out" << std::endl;
 }
 
 /*

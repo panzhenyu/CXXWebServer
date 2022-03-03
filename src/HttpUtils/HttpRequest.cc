@@ -1,3 +1,4 @@
+#include <algorithm>
 #include "HttpRequest.hpp"
 
 HttpRequestMethod HttpRequest::getRequestMethod() { return __method; }
@@ -61,6 +62,16 @@ IHttpReqeustBuilder& HttpRequestBuilder::setBody(HttpRequest::body_t& _body) {
     return *this;
 }
 
+bool HttpRequestAnalyser::haveRequestBody(request_sptr_t _req) {
+    return _req->getHeader().count("content-length") > 0;
+}
+
+server_err_t HttpRequestAnalyser::skipTerminateCH() {
+    if ('\r'!=__input->get() || __input->fail() || '\n'!=__input->get() || __input->fail())
+        return PARSE_TERMINATE_CH_FAILED;
+    return SERVER_OK;
+}
+
 server_err_t HttpRequestAnalyser::parseLine(HttpRequestBuilder& _builder) {
     HttpVersion v;
     HttpRequestMethod m;
@@ -72,18 +83,35 @@ server_err_t HttpRequestAnalyser::parseLine(HttpRequestBuilder& _builder) {
     if (__input->fail()) return PARSE_REQ_URI_FAILED;
     *__input >> version;
     if (__input->fail() || UNKNOWN_HTTP_VERSION==(v=toHttpVersion(version))) return PARSE_REQ_VERSION_FAILED;
-
     _builder.setRequestMethod(m).setURI(uri).setHttpVersion(v);
-    return SERVER_OK;
+    return skipTerminateCH();
 }
 
+/*
+ * Parse Headers for HTTP request
+ * All key will be reserved in lowercase
+ */
 server_err_t HttpRequestAnalyser::parseHead(HttpRequestBuilder& _builder) {
-    std::string cur;
-    *__input >> cur; _builder.setRequestMethod(toRequestMethod(cur));
-    return SERVER_OK;
+    size_t tok, slen;
+    std::string cur, key, value;
+    do {
+        getline(*__input, cur);
+        if (__input->fail()) return PARSE_REQ_HEADER_FAILED;
+        if (std::string::npos == (tok=cur.find(':'))) return INVALID_REQ_HEADER_FORMAT;
+        // stride \r and get key-value
+        cur.pop_back(); slen = cur.length(); key = cur.substr(0, tok++);
+        while (tok<slen && cur[tok]==' ') { ++tok; } value = cur.substr(tok);
+        std::transform(key.begin(), key.end(), key.begin(), ::tolower);
+        _builder.setHeader(key, value);
+    } while (*__input);
+    return skipTerminateCH();
 }
 
 server_err_t HttpRequestAnalyser::parseBody(HttpRequestBuilder& _builder) {
+    std::string body;
+    if (!haveRequestBody(_builder.build())) return SERVER_OK;
+    getline(*__input, body); if (__input->fail()) return PARSE_REQ_BODY_FAILED;
+    body.pop_back(); _builder.setBody(body);
     return SERVER_OK;
 }
 

@@ -74,6 +74,8 @@ public:
     using request_sptr_t    = IHttpReqeustBuilder::request_sptr_t;
     using input_uptr_t      = std::unique_ptr<SocketInputStream>;
 private:
+    bool haveRequestBody(request_sptr_t);
+    server_err_t skipTerminateCH();
     server_err_t parseLine(HttpRequestBuilder&);
     server_err_t parseHead(HttpRequestBuilder&);
     server_err_t parseBody(HttpRequestBuilder&);

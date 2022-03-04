@@ -1,36 +1,38 @@
 #include <algorithm>
 #include "HttpRequest.hpp"
 
-HttpRequestMethod HttpRequest::getRequestMethod() { return __method; }
+inline HttpRequestMethod HttpRequest::getRequestMethod() { return __method; }
 
-HttpRequest::uri_t& HttpRequest::getURI() { return __uri; }
+inline HttpRequest::uri_t& HttpRequest::getURI() { return __uri; }
 
-HttpVersion HttpRequest::getHttpVersion() { return __version; }
+inline HttpVersion HttpRequest::getHttpVersion() { return __version; }
 
-HttpRequest::header_t& HttpRequest::getHeader() { return __header; }
+inline HttpRequest::header_t& HttpRequest::getHeader() { return __header; }
 
-HttpRequest::body_t& HttpRequest::getBody() { return __body; }
+inline HttpRequest::body_t& HttpRequest::getBody() { return __body; }
 
-void HttpRequest::setRequestMethod(HttpRequestMethod _m) { __method = _m; }
+inline void HttpRequest::setRequestMethod(HttpRequestMethod _m) { __method = _m; }
 
-void HttpRequest::setHttpVersion(HttpVersion _v) { __version = _v; }
+inline void HttpRequest::setHttpVersion(HttpVersion _v) { __version = _v; }
 
-void HttpRequest::setURI(HttpRequest::uri_t& _uri) { __uri = _uri; }
+inline void HttpRequest::setURI(const uri_t& _uri) { __uri = _uri; }
 
-void HttpRequest::setHeader(HttpRequest::key_t& _k, HttpRequest::value_t& _v) { __header[_k] = _v; }
+inline void HttpRequest::setHeader(const key_t& _k, const value_t& _v) { __header[_k] = _v; }
 
-void HttpRequest::delHeader(HttpRequest::key_t& _k) { __header.erase(_k); }
-
-void HttpRequest::setBody(HttpRequest::body_t& _body) { __body = _body; }
-
-std::string HttpRequest::serialize() {
-    return "";
+void HttpRequest::delHeader(const key_t& _k) {
+    if (__header.count(_k)) __header.erase(_k);
 }
+
+inline void HttpRequest::setBody(const body_t& _body) { __body = _body; }
+
+// std::string HttpRequest::serialize() {
+//     return "";
+// }
 
 HttpRequestBuilder::HttpRequestBuilder(): 
     __obj(std::shared_ptr<HttpRequest>(new HttpRequest())) {}
 
-HttpRequestBuilder::request_sptr_t HttpRequestBuilder::build() { return __obj; }
+inline HttpRequestBuilder::request_sptr_t HttpRequestBuilder::build() { return __obj; }
 
 IHttpReqeustBuilder& HttpRequestBuilder::setRequestMethod(HttpRequestMethod _m) {
     __obj->setRequestMethod(_m);
@@ -66,7 +68,7 @@ bool HttpRequestAnalyser::haveRequestBody(request_sptr_t _req) {
     return _req->getHeader().count("content-length") > 0;
 }
 
-server_err_t HttpRequestAnalyser::skipTerminateCH() {
+inline server_err_t HttpRequestAnalyser::skipTerminateCH() {
     if ('\r'!=__input->get() || __input->fail() || '\n'!=__input->get() || __input->fail())
         return PARSE_TERMINATE_CH_FAILED;
     return SERVER_OK;
@@ -125,3 +127,5 @@ HttpRequestAnalyser::request_sptr_t HttpRequestAnalyser::getOneHttpRequest(serve
 out:
     return reqBuilder.build();
 }
+
+// std::ostream operator<<(std::ostream& _out, HttpRequest& _req) { }

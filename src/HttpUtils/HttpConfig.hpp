@@ -2,7 +2,6 @@
 
 #include <string>
 #include <ostream>
-#include <unordered_map>
 
 enum HttpRequestMethod {
     GET, HEAD, POST, 
@@ -21,3 +20,12 @@ enum HttpVersion {
 HttpVersion toHttpVersion(std::string&);
 std::string serialize(HttpVersion);
 std::ostream& operator<<(std::ostream&, HttpVersion);
+
+struct HttpResponseStatus {
+    uint16_t    __code;
+    std::string __detail;
+    HttpResponseStatus();
+    HttpResponseStatus(uint16_t _code);
+    HttpResponseStatus(const HttpResponseStatus&) = delete;
+    ~HttpResponseStatus() = default;
+};

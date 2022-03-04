@@ -25,10 +25,10 @@ public:
 
     void setRequestMethod(HttpRequestMethod);
     void setHttpVersion(HttpVersion);
-    void setURI(uri_t&);
-    void setHeader(key_t&, value_t&);
-    void delHeader(key_t&);
-    void setBody(body_t&);
+    void setURI(const uri_t&);
+    void setHeader(const key_t&, const value_t&);
+    void delHeader(const key_t&);
+    void setBody(const body_t&);
 
     std::string serialize();
 private:
@@ -83,6 +83,7 @@ public:
     HttpRequestAnalyser(input_uptr_t&&);
     HttpRequestAnalyser(const HttpRequestAnalyser&) = delete;
     ~HttpRequestAnalyser() = default;
+    // for some error(.e.g unsupported http version), request should be returned normally
     request_sptr_t getOneHttpRequest(server_err_t&);
 private:
     input_uptr_t __input;

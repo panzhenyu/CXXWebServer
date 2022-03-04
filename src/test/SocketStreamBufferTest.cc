@@ -20,7 +20,11 @@ int main() {
     if (-1 == (__listenFD=socket(DOMAIN, SOCK_STREAM, PROTO))) return SOCKET_INIT_FAILED;
     if (-1 == bind(__listenFD, (sockaddr*)&__serverAddress, sizeof(sockaddr))) return SOCKET_BIND_FAILED;
     if (-1 == listen(__listenFD, 5)) { close(__listenFD); return SOCKET_LISTEN_FAILED; }
-    if (-1 == (clientFD=accept(__listenFD, (sockaddr*)&cad, &socketLen))) { close(__listenFD); return -1; }
+    if (-1 == (clientFD=accept(__listenFD, (sockaddr*)&cad, &socketLen))) {
+        printf("Accept failed with errno: %d\n", errno);
+        close(__listenFD);
+        return -1;
+    }
     
     ssize_t recvlen, i;
     char buff[4096];

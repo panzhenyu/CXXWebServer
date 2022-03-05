@@ -10,21 +10,20 @@ public:
     using key_t     = std::string;
     using value_t   = std::string;
     using header_t  = std::unordered_map<key_t, value_t>;
-    using body_t    = Resource;
+    using body_t    = std::shared_ptr<std::istream>;
 private:
     HttpResponse()  = default;
 public:
     HttpVersion         getHttpVersion();
     HttpResponseStatus& getResponseStatus();
     header_t&           getHeader();
-    body_t&             getBody();
-    std::string         serialize();
+    body_t              getBody();
 
     void setHttpVersion(HttpVersion);
-    void setResponseStatus(uint16_t);
+    void setResponseStatus(statecode_t);
     void setHeader(const key_t&, const value_t&);
     void delHeader(const key_t&);
-    void setBody(const body_t&);
+    void setBody(body_t);
 private:
     HttpVersion         __version;
     HttpResponseStatus  __status;
@@ -42,7 +41,7 @@ struct IHttpResponseBuilder {
     virtual ~IHttpResponseBuilder() = 0;
     virtual response_sptr_t build() = 0;
     virtual IHttpResponseBuilder& setHttpVersion(HttpVersion) = 0;
-    virtual IHttpResponseBuilder& setResponseStatus(uint16_t) = 0;
+    virtual IHttpResponseBuilder& setResponseStatus(statecode_t) = 0;
     virtual IHttpResponseBuilder& setHeader(const key_t&, const value_t&) = 0;
     virtual IHttpResponseBuilder& delHeader(const key_t&) = 0;
     virtual IHttpResponseBuilder& setBody(const body_t&) = 0;
@@ -55,7 +54,7 @@ public:
     ~HttpResponseBuilder() = default;
     virtual response_sptr_t build();
     virtual IHttpResponseBuilder& setHttpVersion(HttpVersion);
-    virtual IHttpResponseBuilder& setResponseStatus(uint16_t);
+    virtual IHttpResponseBuilder& setResponseStatus(statecode_t);
     virtual IHttpResponseBuilder& setHeader(const key_t&, const value_t&);
     virtual IHttpResponseBuilder& delHeader(const key_t&);
     virtual IHttpResponseBuilder& setBody(const body_t&);
@@ -65,17 +64,17 @@ private:
 
 class HttpResponsor {
 public:
-    using output_uptr_t     = std::unique_ptr<SocketOutputStream>;
-    using request_sptr_t    = std::shared_ptr<HttpRequest>;
     using response_sptr_t   = std::shared_ptr<HttpResponse>;
+private:
+    server_err_t genResponseLine(std::ostream&, HttpResponse&);
+    server_err_t genResponseHead(std::ostream&, HttpResponse&);
+    server_err_t genResponseBody(std::ostream&, HttpResponse&, long);
 public:
-    HttpResponsor(const Router&);
+    HttpResponsor() = default;
     HttpResponsor(const HttpResponsor&) = delete;
     ~HttpResponsor() = default;
-    response_sptr_t getResponseFromRequest(request_sptr_t);
-    server_err_t response(response_sptr_t, output_uptr_t);
-private:
-    const Router& __router;
+    response_sptr_t getResponseFromRequest(HttpRequest&);
+    server_err_t response(std::ostream&, HttpResponse&);
 };
 
-std::ostream operator<<(std::ostream&, HttpRequest&);
+std::ostream& operator<<(std::ostream&, HttpResponse&);

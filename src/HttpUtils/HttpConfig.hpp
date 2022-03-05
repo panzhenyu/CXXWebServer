@@ -3,6 +3,9 @@
 #include <string>
 #include <ostream>
 
+#define DEFAULT_MAPPING_PATH    "web.xml"
+#define RESPONSE_ENDLINE '\n'
+
 enum HttpRequestMethod {
     GET, HEAD, POST, 
     PUT, DELETE, CONNECT, 
@@ -21,11 +24,15 @@ HttpVersion toHttpVersion(std::string&);
 std::string serialize(HttpVersion);
 std::ostream& operator<<(std::ostream&, HttpVersion);
 
+using statecode_t = uint16_t;
 struct HttpResponseStatus {
-    uint16_t    __code;
-    std::string __detail;
     HttpResponseStatus();
-    HttpResponseStatus(uint16_t _code);
+    HttpResponseStatus(statecode_t _code);
     HttpResponseStatus(const HttpResponseStatus&) = delete;
     ~HttpResponseStatus() = default;
+    statecode_t getCode();
+    std::string& getDetail();
+private:
+    statecode_t __code;
+    std::string __detail;
 };

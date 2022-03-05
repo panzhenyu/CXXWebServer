@@ -3,6 +3,7 @@ set(SRCS
     SocketStream.cc
     HttpRequest.cc
     Resource.cc
+    ResourceAccessor.cc
     Router.cc
     HttpResponse.cc
 )

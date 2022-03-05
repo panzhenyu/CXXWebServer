@@ -1,29 +1,33 @@
 #include <algorithm>
 #include "HttpRequest.hpp"
 
-inline HttpRequestMethod HttpRequest::getRequestMethod() { return __method; }
+HttpRequest::HttpRequest(): 
+    __method(HttpRequestMethod::UNKNOWN_REQUEST_METHOD), 
+    __version(HttpVersion::UNKNOWN_HTTP_VERSION) {}
 
-inline HttpRequest::uri_t& HttpRequest::getURI() { return __uri; }
+HttpRequestMethod HttpRequest::getRequestMethod() { return __method; }
 
-inline HttpVersion HttpRequest::getHttpVersion() { return __version; }
+HttpRequest::uri_t& HttpRequest::getURI() { return __uri; }
 
-inline HttpRequest::header_t& HttpRequest::getHeader() { return __header; }
+HttpVersion HttpRequest::getHttpVersion() { return __version; }
 
-inline HttpRequest::body_t& HttpRequest::getBody() { return __body; }
+HttpRequest::header_t& HttpRequest::getHeader() { return __header; }
 
-inline void HttpRequest::setRequestMethod(HttpRequestMethod _m) { __method = _m; }
+HttpRequest::body_t& HttpRequest::getBody() { return __body; }
 
-inline void HttpRequest::setHttpVersion(HttpVersion _v) { __version = _v; }
+void HttpRequest::setRequestMethod(HttpRequestMethod _m) { __method = _m; }
 
-inline void HttpRequest::setURI(const uri_t& _uri) { __uri = _uri; }
+void HttpRequest::setHttpVersion(HttpVersion _v) { __version = _v; }
 
-inline void HttpRequest::setHeader(const key_t& _k, const value_t& _v) { __header[_k] = _v; }
+void HttpRequest::setURI(const uri_t& _uri) { __uri = _uri; }
+
+void HttpRequest::setHeader(const key_t& _k, const value_t& _v) { __header[_k] = _v; }
 
 void HttpRequest::delHeader(const key_t& _k) {
     if (__header.count(_k)) __header.erase(_k);
 }
 
-inline void HttpRequest::setBody(const body_t& _body) { __body = _body; }
+void HttpRequest::setBody(const body_t& _body) { __body = _body; }
 
 // std::string HttpRequest::serialize() {
 //     return "";
@@ -32,7 +36,7 @@ inline void HttpRequest::setBody(const body_t& _body) { __body = _body; }
 HttpRequestBuilder::HttpRequestBuilder(): 
     __obj(std::shared_ptr<HttpRequest>(new HttpRequest())) {}
 
-inline HttpRequestBuilder::request_sptr_t HttpRequestBuilder::build() { return __obj; }
+HttpRequestBuilder::request_sptr_t HttpRequestBuilder::build() { return __obj; }
 
 IHttpReqeustBuilder& HttpRequestBuilder::setRequestMethod(HttpRequestMethod _m) {
     __obj->setRequestMethod(_m);
@@ -68,24 +72,26 @@ bool HttpRequestAnalyser::haveRequestBody(request_sptr_t _req) {
     return _req->getHeader().count("content-length") > 0;
 }
 
-inline server_err_t HttpRequestAnalyser::skipTerminateCH() {
+server_err_t HttpRequestAnalyser::skipTerminateCH() {
     if ('\r'!=__input->get() || __input->fail() || '\n'!=__input->get() || __input->fail())
         return PARSE_TERMINATE_CH_FAILED;
     return SERVER_OK;
 }
 
+/*
+ * Analyse request line for HttpRequest
+ * error only occurs when it failed to get string from input
+ */
 server_err_t HttpRequestAnalyser::parseLine(HttpRequestBuilder& _builder) {
-    HttpVersion v;
-    HttpRequestMethod m;
     std::string method, uri, version;
 
-    *__input >> method;
-    if (__input->fail() || UNKNOWN_REQUEST_METHOD==(m=toRequestMethod(method))) return PARSE_REQ_METHOD_FAILED;
-    *__input >> uri;
-    if (__input->fail()) return PARSE_REQ_URI_FAILED;
-    *__input >> version;
-    if (__input->fail() || UNKNOWN_HTTP_VERSION==(v=toHttpVersion(version))) return PARSE_REQ_VERSION_FAILED;
-    _builder.setRequestMethod(m).setURI(uri).setHttpVersion(v);
+    if ((*__input>>method).fail()) return PARSE_REQ_METHOD_FAILED;
+    if ((*__input>>uri).fail()) return PARSE_REQ_URI_FAILED;
+    if ((*__input>>version).fail()) return PARSE_REQ_VERSION_FAILED;
+    _builder.setRequestMethod(toRequestMethod(method))
+            .setURI(uri)
+            .setHttpVersion(toHttpVersion(version));
+
     return skipTerminateCH();
 }
 
@@ -97,7 +103,7 @@ server_err_t HttpRequestAnalyser::parseHead(HttpRequestBuilder& _builder) {
     size_t tok, slen;
     std::string cur, key, value;
     do {
-        getline(*__input, cur);
+        getline(*__input, cur, '\n');
         if (__input->fail()) return PARSE_REQ_HEADER_FAILED;
         if (std::string::npos == (tok=cur.find(':'))) return INVALID_REQ_HEADER_FORMAT;
         // stride \r and get key-value
@@ -112,8 +118,10 @@ server_err_t HttpRequestAnalyser::parseHead(HttpRequestBuilder& _builder) {
 server_err_t HttpRequestAnalyser::parseBody(HttpRequestBuilder& _builder) {
     std::string body;
     if (!haveRequestBody(_builder.build())) return SERVER_OK;
-    getline(*__input, body); if (__input->fail()) return PARSE_REQ_BODY_FAILED;
-    body.pop_back(); _builder.setBody(body);
+    getline(*__input, body, '\n');
+    if (__input->fail()) return PARSE_REQ_BODY_FAILED;
+    body.pop_back();
+    _builder.setBody(body);
     return SERVER_OK;
 }
 

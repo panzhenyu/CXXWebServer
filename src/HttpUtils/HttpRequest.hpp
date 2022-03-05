@@ -14,6 +14,8 @@ public:
     using value_t   = std::string;
     using header_t  = std::unordered_map<key_t, value_t>;
     using body_t    = std::string;
+private:
+    HttpRequest();
 public:
     ~HttpRequest() = default;
     
@@ -33,7 +35,6 @@ public:
     std::string serialize();
 private:
     friend class HttpRequestBuilder;
-    HttpRequest();
     HttpRequestMethod   __method;
     uri_t               __uri;
     HttpVersion         __version;

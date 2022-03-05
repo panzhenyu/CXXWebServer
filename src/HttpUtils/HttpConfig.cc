@@ -35,7 +35,7 @@ std::string serialize(HttpVersion _v) { return HttpVersionString[_v]; }
 
 std::ostream& operator<<(std::ostream& _o, HttpVersion _v) { return _o << serialize(_v); }
 
-static std::unordered_map<uint16_t, std::string> StatusCodeDetail = {
+static std::unordered_map<statecode_t, std::string> StatusCodeDetail = {
     {200, "OK"}, 
     {400, "Bad Request"}, {403, "Forbidden"}, {404, "Not Found"}, 
     {500, "Internal Server Error"}, {501, "Not Implemented"}, 
@@ -44,7 +44,11 @@ static std::unordered_map<uint16_t, std::string> StatusCodeDetail = {
 
 HttpResponseStatus::HttpResponseStatus(): HttpResponseStatus(200) {}
 
-HttpResponseStatus::HttpResponseStatus(uint16_t _code): __code(_code) {
+HttpResponseStatus::HttpResponseStatus(statecode_t _code): __code(_code) {
     if (StatusCodeDetail.count(__code)) __detail = StatusCodeDetail[__code];
     else __detail = "";
 }
+
+statecode_t HttpResponseStatus::getCode() { return __code; }
+
+std::string& HttpResponseStatus::getDetail() { return __detail; }

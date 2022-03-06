@@ -3,15 +3,17 @@
 #include "HttpResponse.hpp"
 #include "ResourceAccessor.hpp"
 
-static char buff[4096];
+#define BFSIZE  4096
 
-HttpVersion HttpResponse::getHttpVersion() { return __version; }
+static char _local_static_buff[BFSIZE];
 
-HttpResponseStatus& HttpResponse::getResponseStatus() { return __status; }
+HttpVersion HttpResponse::getHttpVersion() const { return __version; }
 
-HttpResponse::header_t& HttpResponse::getHeader() { return __header; }
+const HttpResponseStatus& HttpResponse::getResponseStatus() const { return __status; }
 
-HttpResponse::body_t HttpResponse::getBody() { return __body; }
+const HttpResponse::header_t& HttpResponse::getHeader() const { return __header; }
+
+HttpResponse::body_t HttpResponse::getBody() const { return __body; }
 
 void HttpResponse::setHttpVersion(HttpVersion _v) { __version = _v; }
 
@@ -58,16 +60,15 @@ IHttpResponseBuilder& HttpResponseBuilder::setBody(const body_t& _body) {
 }
 
 // use router get coresponding resource, return a status setted HttpResponse pointer
-HttpResponsor::response_sptr_t HttpResponsor::getResponseFromRequest(HttpRequest& _request) {
+HttpResponsor::response_sptr_t HttpResponsor::getResponseFromRequest(HttpRequest& _request) const {
     server_err_t err;
-    statecode_t code, o;
+    statecode_t code;
     HttpVersion version;
     HttpRequestMethod method;
     HttpResponseBuilder builder;
-    std::shared_ptr<GeneralResource> resource;
     HttpResponse::body_t staticBody;
-    CGIResourceAccessor::handler_t cgiHandler;
-    const Router& router = Router::getRouter();
+    std::shared_ptr<GeneralResource> resource;
+    Router& router = Router::getRouter();
 
     version = _request.getHttpVersion();
     method = _request.getRequestMethod();
@@ -79,10 +80,9 @@ HttpResponsor::response_sptr_t HttpResponsor::getResponseFromRequest(HttpRequest
     else {
         switch (resource->getType()) {
             case GeneralResource::STATIC:
-                staticBody = StaticResourceAccessor::getStaticResourceAccessor()
-                    .access(static_cast<StaticResource&>(*resource), code, err);
+                staticBody = LocalResourceAccessor::access(static_cast<StaticResource&>(*resource), err);
                 if (SERVER_OK == err) goto buildObj;
-                break;
+                code = 500; break;
             case GeneralResource::CGI:
                 // not complete
                 goto buildObj;
@@ -91,9 +91,8 @@ HttpResponsor::response_sptr_t HttpResponsor::getResponseFromRequest(HttpRequest
         }
     }
     // try to get error page body, if error page isn't setted, return a default error page
-    resource = router[code];
-    staticBody = StaticResourceAccessor::getStaticResourceAccessor()
-        .access(static_cast<StaticResource&>(*resource), o, err);
+    if ((resource=router[code])->getType() != GeneralResource::INVALID)
+        staticBody = LocalResourceAccessor::access(static_cast<StaticResource&>(*resource), err);
     if (err != SERVER_OK) staticBody = router.getDefaultErrorPage(code);
 
 buildObj:
@@ -102,17 +101,17 @@ buildObj:
 
 server_err_t HttpResponsor::genResponseLine(
 std::ostream& _output, 
-HttpResponse& _response) {
+HttpResponse& _response) const {
     auto& responseStatus = _response.getResponseStatus();
     _output << _response.getHttpVersion() << ' ' 
         << responseStatus.getCode() << ' ' 
         << responseStatus.getDetail() << RESPONSE_ENDLINE;
-    return _output.fail() ? SERVER_OK : GEN_RESPONSE_LINE_FAILED;
+    return _output.fail() ? GEN_RESPONSE_LINE_FAILED : SERVER_OK;
 }
 
 server_err_t HttpResponsor::genResponseHead(
 std::ostream& _output, 
-HttpResponse& _response) {
+HttpResponse& _response) const {
     for (auto& [key, value] : _response.getHeader()) {
         _output << key << ": " << value << RESPONSE_ENDLINE;
         if (_output.fail()) return GEN_RESPONSE_HEAD_FAILED;
@@ -122,7 +121,7 @@ HttpResponse& _response) {
 
 server_err_t HttpResponsor::genResponseBody(
 std::ostream& _output, 
-HttpResponse& _response, long _len) {
+HttpResponse& _response, long _len) const {
     long rest, cur;
     server_err_t error;
     HttpResponse::body_t body;
@@ -130,12 +129,13 @@ HttpResponse& _response, long _len) {
     error = SERVER_OK;
     body = _response.getBody(); body->seekg(0, body->beg); rest = _len;
     while (rest > 0) {
-        if (!body->fail()) cur = body->readsome(buff, 4096);
-        else cur = rest < 4096 ? rest : 4096;
-        _output.write(buff, cur); rest -= cur;
+        cur = rest < BFSIZE ? rest : BFSIZE;
+        if (!body->fail()) cur = body->readsome(_local_static_buff, cur);
+        else cur = rest < BFSIZE ? rest : BFSIZE;
+        _output.write(_local_static_buff, cur); rest -= cur;
 
         if (rest>0 && body->fail()) {
-            std::memset(buff, 0, 4096);
+            std::memset(_local_static_buff, 0, 4096);
             error = GEN_RESPONSE_BODY_FAILED;
         }
         if (_output.fail()) { error = GEN_RESPONSE_BODY_FAILED; break; }
@@ -146,7 +146,7 @@ HttpResponse& _response, long _len) {
 // serialize HttpResponse to output, use a ResourceAccessor to access concrete response
 server_err_t HttpResponsor::response(
 std::ostream& _output, 
-HttpResponse& _response) {
+HttpResponse& _response) const {
     server_err_t error;
     std::streampos bodyLen;
     HttpResponse::body_t body;

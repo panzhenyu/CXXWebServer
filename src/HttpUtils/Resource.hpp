@@ -13,7 +13,7 @@ protected:
     GeneralResource(const GeneralResource&) = default;
     ~GeneralResource() = default;
 public:
-    ResourceType getType();
+    ResourceType getType() const;
 private:
     ResourceType __type;
 };
@@ -30,8 +30,8 @@ protected:
     ValidResource(ResourceType, const std::string&, const std::string&);
 public:
     ValidResource(const ValidResource&) = default;
-    std::string getPath();
-    std::string getURI();
+    std::string getPath() const;
+    std::string getURI() const;
 private:
     std::string __path;
     std::string __uri;

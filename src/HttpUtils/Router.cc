@@ -3,8 +3,8 @@
 
 Router::Router() { doLoad(DEFAULT_MAPPING_PATH); }
 
-const Router& Router::getRouter() {
-    static const Router router;
+Router& Router::getRouter() {
+    static Router router;
     return router;
 }
 
@@ -25,21 +25,21 @@ server_err_t Router::loadFrom(const std::string& _path) {
     return error;
 }
 
-Router::gresource_sptr_t Router::operator[](statecode_t _code) const {
-    Router& router = const_cast<Router&>(Router::getRouter());
+Router::gresource_sptr_t Router::operator[](statecode_t _code) {
+    Router& router = Router::getRouter();
     err_mapper& mapper = router.__errMapper;
 
     std::lock_guard<std::mutex> lck(router.__lock);
-    if (mapper.count(_code)) return std::make_shared<ValidResource>(*mapper[_code]);
+    if (mapper.count(_code)) return std::make_shared<ValidResource>(*mapper.at(_code));
     return std::make_shared<InvalidResource>();
 }
 
-Router::gresource_sptr_t Router::operator[](const uri_t& _uri) const {
-    Router& router = const_cast<Router&>(Router::getRouter());
+Router::gresource_sptr_t Router::operator[](const uri_t& _uri) {
+    Router& router = Router::getRouter();
     uri_mapper& mapper = router.__uriMapper;
 
     std::lock_guard<std::mutex> lck(router.__lock);
-    if (mapper.count(_uri)) return std::make_shared<ValidResource>(*mapper[_uri]);
+    if (mapper.count(_uri)) return std::make_shared<ValidResource>(*mapper.at(_uri));
     return std::make_shared<InvalidResource>();
 }
 

@@ -20,10 +20,10 @@ public:
     ~HttpRequest() = default;
     
     HttpRequestMethod getRequestMethod();
-    uri_t& getURI();
-    HttpVersion getHttpVersion();
-    header_t& getHeader();
-    body_t& getBody();
+    const uri_t& getURI() const;
+    HttpVersion getHttpVersion() const;
+    const header_t& getHeader() const;
+    const body_t& getBody() const;
 
     void setRequestMethod(HttpRequestMethod);
     void setHttpVersion(HttpVersion);
@@ -32,7 +32,7 @@ public:
     void delHeader(const key_t&);
     void setBody(const body_t&);
 
-    std::string serialize();
+    std::string serialize() const;
 private:
     friend class HttpRequestBuilder;
     HttpRequestMethod   __method;
@@ -44,8 +44,11 @@ private:
 
 struct IHttpReqeustBuilder {
     using request_sptr_t = std::shared_ptr<HttpRequest>;
+protected:
+    IHttpReqeustBuilder() = default;
+public:
+    virtual ~IHttpReqeustBuilder() = default;
     virtual request_sptr_t build() = 0;
-    virtual ~IHttpReqeustBuilder() = 0;
     virtual IHttpReqeustBuilder& setRequestMethod(HttpRequestMethod) = 0;
     virtual IHttpReqeustBuilder& setHttpVersion(HttpVersion) = 0;
     virtual IHttpReqeustBuilder& setURI(HttpRequest::uri_t&) = 0;
@@ -72,22 +75,19 @@ private:
 
 class HttpRequestAnalyser {
 public:
-    using request_sptr_t    = IHttpReqeustBuilder::request_sptr_t;
-    using input_uptr_t      = std::unique_ptr<SocketInputStream>;
+    using request_sptr_t = IHttpReqeustBuilder::request_sptr_t;
 private:
-    bool haveRequestBody(request_sptr_t);
-    server_err_t skipTerminateCH();
-    server_err_t parseLine(HttpRequestBuilder&);
-    server_err_t parseHead(HttpRequestBuilder&);
-    server_err_t parseBody(HttpRequestBuilder&);
+    size_t requestBodyLength(request_sptr_t);
+    server_err_t skipTerminateCH(std::istream&);
+    server_err_t parseLine(std::istream&, HttpRequestBuilder&);
+    server_err_t parseHead(std::istream&, HttpRequestBuilder&);
+    server_err_t parseBody(std::istream&, HttpRequestBuilder&);
 public:
-    HttpRequestAnalyser(input_uptr_t&&);
+    HttpRequestAnalyser() = default;
     HttpRequestAnalyser(const HttpRequestAnalyser&) = delete;
     ~HttpRequestAnalyser() = default;
     // for some error(.e.g unsupported http version), request should be returned normally
-    request_sptr_t getOneHttpRequest(server_err_t&);
-private:
-    input_uptr_t __input;
+    request_sptr_t getOneHttpRequest(std::istream&, server_err_t&);
 };
 
-std::ostream operator<<(std::ostream&, HttpRequest&);
+std::ostream& operator<<(std::ostream&, const HttpRequest&);

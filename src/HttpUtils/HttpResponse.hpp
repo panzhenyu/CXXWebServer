@@ -14,10 +14,10 @@ public:
 private:
     HttpResponse()  = default;
 public:
-    HttpVersion         getHttpVersion();
-    HttpResponseStatus& getResponseStatus();
-    header_t&           getHeader();
-    body_t              getBody();
+    HttpVersion getHttpVersion() const;
+    const HttpResponseStatus& getResponseStatus() const;
+    const header_t& getHeader() const;
+    body_t getBody() const;
 
     void setHttpVersion(HttpVersion);
     void setResponseStatus(statecode_t);
@@ -36,9 +36,10 @@ struct IHttpResponseBuilder {
     using value_t           = HttpResponse::value_t;
     using body_t            = HttpResponse::body_t;
     using response_sptr_t   = std::shared_ptr<HttpResponse>;
-
+protected:
     IHttpResponseBuilder() = default;
-    virtual ~IHttpResponseBuilder() = 0;
+public:
+    virtual ~IHttpResponseBuilder() = default;
     virtual response_sptr_t build() = 0;
     virtual IHttpResponseBuilder& setHttpVersion(HttpVersion) = 0;
     virtual IHttpResponseBuilder& setResponseStatus(statecode_t) = 0;
@@ -66,15 +67,15 @@ class HttpResponsor {
 public:
     using response_sptr_t   = std::shared_ptr<HttpResponse>;
 private:
-    server_err_t genResponseLine(std::ostream&, HttpResponse&);
-    server_err_t genResponseHead(std::ostream&, HttpResponse&);
-    server_err_t genResponseBody(std::ostream&, HttpResponse&, long);
+    server_err_t genResponseLine(std::ostream&, HttpResponse&) const;
+    server_err_t genResponseHead(std::ostream&, HttpResponse&) const;
+    server_err_t genResponseBody(std::ostream&, HttpResponse&, long) const;
 public:
     HttpResponsor() = default;
     HttpResponsor(const HttpResponsor&) = delete;
     ~HttpResponsor() = default;
-    response_sptr_t getResponseFromRequest(HttpRequest&);
-    server_err_t response(std::ostream&, HttpResponse&);
+    response_sptr_t getResponseFromRequest(HttpRequest&) const;
+    server_err_t response(std::ostream&, HttpResponse&) const;
 };
 
 std::ostream& operator<<(std::ostream&, HttpResponse&);

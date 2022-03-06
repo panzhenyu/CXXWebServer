@@ -75,3 +75,9 @@
         after throwing an instance of '__gnu_cxx::recursive_init_error'。但是换成递归锁之后情况并没有改善，暂时将loadFrom替换成无锁加
         载doLoad。
     6. 完成了Router的测试。
+
+2022.3.6
+    1. 完成了HttpRequest与HttpResponse的接口测试，将接口集成到IOEventHandler后，除了SIGPIPE导致的异常退出外，不会出现异常情况。server启
+    动后用WebBench模拟5000个客户端持续不断的发送2分钟Http请求，利用top观察server的内存占用情况，未发现明显变化，在IOEventHandler::handle
+    函数中插入new char语句后，再次用WebBench进行上述过程，内存占用逐渐变大，据此可能暂时不存在大内存泄漏。
+    2. 修正了HttpUtils中大部分类的getter函数，为其加上了const。

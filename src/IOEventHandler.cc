@@ -3,7 +3,9 @@
 #include "Event.hpp"
 #include "Worker.hpp"
 #include "IOEventHandler.hpp"
+#include "HttpUtils/HttpRequest.hpp"
 #include "HttpUtils/SocketStream.hpp"
+#include "HttpUtils/HttpResponse.hpp"
 
 #include <cassert>
 
@@ -16,18 +18,27 @@ IOEventHandler::~IOEventHandler() {}
 int IOEventHandler::handle(event_sptr_t _event) {
     int fd;
     std::string line;
-    std::unique_ptr<SocketInputStream> in;
-    std::unique_ptr<SocketOutputStream> out;
+    server_err_t error;
+    HttpResponsor responsor;
+    HttpRequestAnalyser analyser;
+    std::shared_ptr<HttpRequest>req;
+    std::shared_ptr<HttpResponse> res;
+    std::shared_ptr<SocketInputStream> in;
+    std::shared_ptr<SocketOutputStream> out;
+
     fd = _event->getFD();
-    
-    in = std::make_unique<SocketInputStream>(std::make_shared<SocketStreamBuffer>(fd));
-    out = std::make_unique<SocketOutputStream>(std::make_shared<SocketStreamBuffer>(fd));
-    getline(*in, line);
-    std::cout << line << std::endl;
-    if (line[0] == 'G')
-        *out << "HTTP/1.0" << " " << 200 << " " << "OK" << "\n"
-            << "Content-Length: 5" << "\n" << "\n" << "Hello";
-        // send(fd, "HTTP/1.0 200 OK\nContent-Length: 5\n\nHello", 41, 0);
+    in = std::make_shared<SocketInputStream>(std::make_shared<SocketStreamBuffer>(fd));
+    out = std::make_shared<SocketOutputStream>(std::make_shared<SocketStreamBuffer>(fd));
+    while (!in->eof()) {
+        req = analyser.getOneHttpRequest(*in, error);
+        std::cout << "getOneHttpRequest returned with error: " << error << std::endl;
+        if (SERVER_OK == error) {
+            std::cout << *req << std::endl;
+            res = responsor.getResponseFromRequest(*req);
+            error = responsor.response(*out, *res);
+            std::cout << "response ret with error: " << error << std::endl;
+        }
+    }
 
     assert(_event);
     assert(_event->getWorker());

@@ -12,7 +12,7 @@ enum HttpRequestMethod {
     OPTIONS, TRACE, PATCH,
     UNKNOWN_REQUEST_METHOD
 };
-HttpRequestMethod toRequestMethod(std::string&);
+HttpRequestMethod toRequestMethod(const std::string&);
 std::string serialize(HttpRequestMethod);
 std::ostream& operator<<(std::ostream&, HttpRequestMethod);
 
@@ -20,18 +20,18 @@ enum HttpVersion {
     HTTP_1_0, HTTP_1_1, 
     UNKNOWN_HTTP_VERSION
 };
-HttpVersion toHttpVersion(std::string&);
+HttpVersion toHttpVersion(const std::string&);
 std::string serialize(HttpVersion);
 std::ostream& operator<<(std::ostream&, HttpVersion);
 
-using statecode_t = uint16_t;
+typedef uint16_t statecode_t;
 struct HttpResponseStatus {
     HttpResponseStatus();
     HttpResponseStatus(statecode_t _code);
     HttpResponseStatus(const HttpResponseStatus&) = delete;
     ~HttpResponseStatus() = default;
-    statecode_t getCode();
-    std::string& getDetail();
+    statecode_t getCode() const;
+    const std::string& getDetail() const;
 private:
     statecode_t __code;
     std::string __detail;

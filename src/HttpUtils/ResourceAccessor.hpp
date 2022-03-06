@@ -3,30 +3,28 @@
 #include "HttpRequest.hpp"
 #include "HttpResponse.hpp"
 
-/*
- * StaticResourceAccessor
- * Singleton pattern, so it must achieve thread-safe public function
- * just handle local resource, return an fstream
- */
-class StaticResourceAccessor {
-public:
+struct LocalResourceAccessor {
     using reader_sptr_t = std::shared_ptr<std::istream>;
-protected:
-    StaticResourceAccessor() = default;
-public:
-    static StaticResourceAccessor& getStaticResourceAccessor();
-public:
-    ~StaticResourceAccessor() = default;
-    reader_sptr_t access(const StaticResource&, statecode_t&, server_err_t&);
+    using handler_t     = std::function<int(HttpRequest&, HttpResponse&)>;
+
+    static reader_sptr_t access(const StaticResource&, server_err_t&);
+    static handler_t access(const CGIResource&, server_err_t&);
+};
+
+/*
+ * RedisConnection
+ * Singleton pattern, so it must achieve thread-safe public function
+ */
+class RedisConnection {
+
 private:
     std::mutex __lock;
 };
 
-class CGIResourceAccessor {
-public:
-    using handler_t = std::function<int(HttpRequest&, HttpResponse&)>;
-public:
-    handler_t access(const CGIResource&, server_err_t&);
-private:
-    std::mutex __lock;
+/*
+ * Local File Loader
+ * Help to get a read only file handler(ifstream)
+ */
+class LocalFileLoader {
+
 };

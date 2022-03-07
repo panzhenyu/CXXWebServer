@@ -2,11 +2,9 @@
 
 /* RedisConnection member functions */
 RedisConnection::RedisConnection(
-redisContext* _context, 
-RedisConnectionPool& _pool, 
-timeout_t _lockTimeout, 
-timeout_t _reqTimeout): 
-__context(_context), __pool(_pool), __lockTimeout(__lockTimeout), __reqTimeout(_reqTimeout) {}
+redisContext* _context, RedisConnectionPool& _pool, 
+timeout_t _lockTimeout, timeout_t _reqTimeout): 
+__context(_context), __pool(_pool), __lockTimeout(_lockTimeout), __reqTimeout(_reqTimeout) {}
 
 RedisConnection::~RedisConnection() {
     redisFree(__context);
@@ -57,10 +55,10 @@ RedisCache::RedisCache(redis_pool_stpr_t) {
 
 }
 
-std::pair<bool, RedisCache::val_t> RedisCache::get(const key_t&) {
+// std::pair<bool, RedisCache::val_t> RedisCache::get(const key_t&) {
 
-}
+// }
 
-bool RedisCache::put(const key_t&, const val_t&) {
-    return true;
-}
+// bool RedisCache::put(const key_t&, const val_t&) {
+//     return true;
+// }

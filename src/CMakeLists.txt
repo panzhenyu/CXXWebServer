@@ -21,12 +21,13 @@ add_library(WebServerUtils ${SRCS})
 # find and add system libs
 # set(THREADS_PREFER_PTHREAD_FLAG ON)
 # find_package(Threads REQUIRED)
-target_link_libraries(server pthread)
-target_link_libraries(server HttpUtils)
-target_link_libraries(server Log)
+target_link_libraries(server pthread HttpUtils Log Cache)
+# add ThirdPartyLibs
+target_link_libraries(server hiredis)
 
 # add sub dir
 add_subdirectory(HttpUtils)
 add_subdirectory(Log)
 add_subdirectory(test)
 add_subdirectory(ThirdParty)
+add_subdirectory(Cache)

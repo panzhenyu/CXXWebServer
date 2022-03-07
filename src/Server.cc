@@ -17,9 +17,9 @@ static ServerConfig defaultCfg = {
     .__serverPort = 8888, 
     .__listenQueue = 1000, 
     .__redisConf = {
-        .__redisServerAddr = "127.0.0.1", 
+        // .__redisServerAddr = "127.0.0.1", 
         .__redisServerPort = 6379, 
-        .__redisServerPasswd = "panda", 
+        // .__redisServerPasswd = "panda", 
         .__redisServerEnable = true, 
         .__redisServerHasPasswd = true, 
         .__maxConn = 8, 
@@ -38,7 +38,7 @@ server_err_t Server::loadCfgFrom(std::string _cfgPath) {
 Server::Server(): Server(nullptr) {}
 
 Server::Server(const char* _cfgPath):
-    __cfgPath(""), __running(false), __listenFD(-1) {
+__cfgPath(""), __listenFD(-1), __running(false) {
     // 1. load server config if exists
     if (_cfgPath) { __cfgPath = _cfgPath; loadCfgFrom(_cfgPath); }
     else __serverCfg = defaultCfg;

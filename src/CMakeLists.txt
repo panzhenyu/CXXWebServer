@@ -12,6 +12,9 @@ set(SRCS
 # add the executable
 add_executable(server ${SRCS})
 
+# add third-party include path
+include_directories(ThirdParty)
+
 # add libs for test
 add_library(WebServerUtils ${SRCS})
 
@@ -26,3 +29,4 @@ target_link_libraries(server Log)
 add_subdirectory(HttpUtils)
 add_subdirectory(Log)
 add_subdirectory(test)
+add_subdirectory(ThirdParty)

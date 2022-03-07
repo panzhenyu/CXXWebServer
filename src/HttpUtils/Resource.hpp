@@ -26,8 +26,11 @@ public:
 };
 
 class ValidResource: public GeneralResource {
+public:
+    using path_t    = std::string;
+    using uri_t     = std::string;
 protected:
-    ValidResource(ResourceType, const std::string&, const std::string&);
+    ValidResource(ResourceType, const path_t&, const uri_t&);
 public:
     ValidResource(const ValidResource&) = default;
     std::string getPath() const;
@@ -39,14 +42,14 @@ private:
 
 class StaticResource: public ValidResource {
 public:
-    StaticResource(const std::string&, const std::string&);
+    StaticResource(const path_t&, const uri_t&);
     StaticResource(const StaticResource&) = default;
     ~StaticResource() = default;
 };
 
 struct CGIResource: public ValidResource {
 public:
-    CGIResource(const std::string&, const std::string&);
+    CGIResource(const path_t&, const uri_t&);
     CGIResource(const CGIResource&) = default;
     ~CGIResource() = default;
 };

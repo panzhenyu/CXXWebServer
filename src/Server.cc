@@ -16,10 +16,23 @@ static ServerConfig defaultCfg = {
     .__serverAddr = INADDR_ANY, 
     .__serverPort = 8888, 
     .__listenQueue = 1000, 
+    .__redisConf = {
+        .__redisServerAddr = "127.0.0.1", 
+        .__redisServerPort = 6379, 
+        .__redisServerPasswd = "panda", 
+        .__redisServerEnable = true, 
+        .__redisServerHasPasswd = true, 
+        .__maxConn = 8, 
+        .__maxRef = 2, 
+        .__responseTimeout = ServerConfig::timeout_t(100), 
+        .__lockTimeout = ServerConfig::timeout_t(800), 
+    }, 
+    .__cacheEnable = true, 
 };
 
-void Server::loadCfgFrom(std::string _cfgPath) {
+server_err_t Server::loadCfgFrom(std::string _cfgPath) {
     // load config from path
+    return SERVER_OK;
 }
 
 Server::Server(): Server(nullptr) {}
@@ -34,7 +47,9 @@ Server::Server(const char* _cfgPath):
     __serverAddress.sin_port = htons(__serverCfg.__serverPort);
     __serverAddress.sin_family = DOMAIN;
 }
+
 #include <iostream>
+
 Server::~Server() {
     // 1. stop all thread
     if (isRunning()) stop();

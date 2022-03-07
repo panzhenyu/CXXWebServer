@@ -12,19 +12,11 @@ struct LocalResourceAccessor {
 };
 
 /*
- * RedisConnection
- * Singleton pattern, so it must achieve thread-safe public function
- */
-class RedisConnection {
-
-private:
-    std::mutex __lock;
-};
-
-/*
  * Local File Loader
  * Help to get a read only file handler(ifstream)
  */
-class LocalFileLoader {
+class FileLoader {
 
+public:
+    
 };

@@ -1,3 +1,4 @@
+#include <cassert>
 #include <unistd.h>
 #include <iostream>
 #include "Event.hpp"
@@ -7,11 +8,8 @@
 #include "HttpUtils/SocketStream.hpp"
 #include "HttpUtils/HttpResponse.hpp"
 
-#include <cassert>
-
-IOEventHandler::IOEventHandler() {}
-
-IOEventHandler::IOEventHandler(const IOEventHandler&) {}
+IOEventHandler::IOEventHandler(router_sptr_t _router, accessor_sptr_t _accessor):
+__router(_router), __accessor(_accessor) {}
 
 IOEventHandler::~IOEventHandler() {}
 
@@ -34,7 +32,7 @@ int IOEventHandler::handle(event_sptr_t _event) {
         std::cout << "getOneHttpRequest returned with error: " << error << std::endl;
         if (SERVER_OK == error) {
             std::cout << *req << std::endl;
-            res = responsor.getResponseFromRequest(*req);
+            res = responsor.getResponseFromRequest(*req, *__router, *__accessor);
             error = responsor.response(*out, *res);
             std::cout << "response ret with error: " << error << std::endl;
         }

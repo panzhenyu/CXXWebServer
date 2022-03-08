@@ -8,7 +8,8 @@
 #include <sys/epoll.h>
 #include <unordered_map>
 #include "Error.hpp"
-#include "Event.hpp"
+
+class Event;
 
 class Epoll {
 public:

@@ -16,4 +16,6 @@ protected:
 public:
     virtual bool get(const key_t&, val_t&) = 0;
     virtual bool put(const key_t&, const val_t&) = 0;
+    virtual bool validKey(const key_t&) = 0;
+    virtual bool validVal(const val_t&) = 0;
 };

@@ -1,7 +1,9 @@
 #include <iostream>
+#include "../HttpUtils/Router.hpp"
+#include "../HttpUtils/HttpRequest.hpp"
 #include "../HttpUtils/SocketStream.hpp"
 #include "../HttpUtils/HttpResponse.hpp"
-#include "../HttpUtils/HttpRequest.hpp"
+#include "../HttpUtils/ResourceAccessor.hpp"
 #include "../Error.hpp"
 #include "../Server.hpp"
 #include "../Epoll.hpp"
@@ -17,6 +19,8 @@ void test4Request(int __clientFD) {
     shared_ptr<HttpRequest> req;
     shared_ptr<HttpResponse> res;
     string msg;
+    Router router;
+    CachedResourceAccessor accessor(nullptr);
 
     iss = make_shared<SocketInputStream>(make_shared<SocketStreamBuffer>(__clientFD));
     oss = make_shared<SocketOutputStream>(make_shared<SocketStreamBuffer>(__clientFD));
@@ -29,7 +33,7 @@ void test4Request(int __clientFD) {
         req = analyser.getOneHttpRequest(*iss, error);
         cout << "getOneHttpRequest returned with error: " << error << endl;
         cout << *req << endl;
-        res = responsor.getResponseFromRequest(*req);
+        res = responsor.getResponseFromRequest(*req, router, accessor);
         error = responsor.response(*oss, *res);
         cout << "response ret with error: " << error << endl;
     }

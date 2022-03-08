@@ -136,6 +136,8 @@ public:
     // get a RedisConnection from RedisConnectionPool and do put|get with it.
     virtual bool get(const key_t&, val_t&) override;
     virtual bool put(const key_t&, const val_t&) override;
+    virtual bool validKey(const key_t&) override;
+    virtual bool validVal(const val_t&) override;
 private:
     poll_sptr_t __connPool;
 };

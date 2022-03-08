@@ -1,5 +1,6 @@
 #include <cstring>
 #include <sstream>
+#include "Router.hpp"
 #include "HttpResponse.hpp"
 #include "ResourceAccessor.hpp"
 
@@ -60,7 +61,11 @@ IHttpResponseBuilder& HttpResponseBuilder::setBody(const body_t& _body) {
 }
 
 // use router get coresponding resource, return a status setted HttpResponse pointer
-HttpResponsor::response_sptr_t HttpResponsor::getResponseFromRequest(HttpRequest& _request) const {
+HttpResponsor::response_sptr_t
+HttpResponsor::getResponseFromRequest(
+HttpRequest& _request, 
+IRouter& _router, 
+IResourceAccessor& _accessor) const {
     server_err_t err;
     statecode_t code;
     HttpVersion version;
@@ -68,11 +73,10 @@ HttpResponsor::response_sptr_t HttpResponsor::getResponseFromRequest(HttpRequest
     HttpResponseBuilder builder;
     HttpResponse::body_t staticBody;
     std::shared_ptr<GeneralResource> resource;
-    Router& router = Router::getRouter();
 
     version = _request.getHttpVersion();
     method = _request.getRequestMethod();
-    resource = router[_request.getURI()];
+    resource = _router[_request.getURI()];
 
     // must set error pages
     if (version == UNKNOWN_HTTP_VERSION) { version = HTTP_1_0; code = 505; }
@@ -80,7 +84,7 @@ HttpResponsor::response_sptr_t HttpResponsor::getResponseFromRequest(HttpRequest
     else {
         switch (resource->getType()) {
             case GeneralResource::STATIC:
-                staticBody = LocalResourceAccessor::access(static_cast<StaticResource&>(*resource), err);
+                staticBody = _accessor.access(static_cast<StaticResource&>(*resource), err);
                 if (SERVER_OK == err) goto buildObj;
                 code = 500; break;
             case GeneralResource::CGI:
@@ -91,9 +95,9 @@ HttpResponsor::response_sptr_t HttpResponsor::getResponseFromRequest(HttpRequest
         }
     }
     // try to get error page body, if error page isn't setted, return a default error page
-    if ((resource=router[code])->getType() != GeneralResource::INVALID)
-        staticBody = LocalResourceAccessor::access(static_cast<StaticResource&>(*resource), err);
-    if (err != SERVER_OK) staticBody = router.getDefaultErrorPage(code);
+    if ((resource=_router[code])->getType() != GeneralResource::INVALID)
+        staticBody = _accessor.access(static_cast<StaticResource&>(*resource), err);
+    if (err != SERVER_OK) staticBody = _router.getDefaultErrorPage(code);
 
 buildObj:
     // may be set header?

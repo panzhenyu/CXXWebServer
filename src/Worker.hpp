@@ -39,7 +39,7 @@ public:
     int maxFDS();
     int activeFDS();
 
-    int run();
+    server_err_t run();
     void stop();
     void handleEvent(event_sptr_t);
     

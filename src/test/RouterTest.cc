@@ -18,7 +18,7 @@ ostream& operator<<(ostream& _out, GeneralResource& _gs) {
 }
 
 int main() {
-    Router& router = Router::getRouter();
+    Router router;
     cout << *router[404] << endl;
     cout << *router["/hello"] << endl;
     cout << *router[505] << endl;

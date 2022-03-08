@@ -83,8 +83,15 @@
     2. 修正了HttpUtils中大部分类的getter函数，为其加上了const。
 
 2022.3.7
-    1. 完成了Cache模块的实现与测试。
+    1. 完成了Cache模块的部分实现。
     2. 两个问题：
         1) HttpResponse中没有考虑到MIME类型，需要在后续添加对MIME类型的判断(可以先直接复制Request中的MIME类型)。
         2) 当前IOEventHandler既处理客户端链接的IO，又处理请求解析与响应构造，缺乏一种将IO与计算分离的机制。
 
+2022.3.8
+    1. 完成了Cache模块的实现与测试。
+    2. 取消了Router的单例模式，Router和ResourceAccessor交由Server统一初始化。由于现在IOEventHandler不仅仅处理IO，还需要根据HTTP请求构造
+    HTTP响应，因此Server将会传递Router与ResourceAccessor给IOEVentHandler，使其能够正常根据请求构造响应。
+    3. 重新组织了Server的函数，将初始化、清理、停止三类功能分离，并加入ResourceAccessor与Router的初始化，其中若启用了RedisCache功能，还会
+    初始化RedisCache来构造CachedResourceAccessor。
+    4. 将Cache模块加入后暂时正常运行。

@@ -1,4 +1,3 @@
-#include <algorithm>
 #include "HttpRequest.hpp"
 
 #define BFSIZE  512

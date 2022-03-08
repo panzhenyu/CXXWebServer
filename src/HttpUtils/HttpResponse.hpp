@@ -1,8 +1,10 @@
 #pragma once
 
-#include "Router.hpp"
 #include "HttpRequest.hpp"
 #include "SocketStream.hpp"
+
+struct IRouter;
+struct IResourceAccessor;
 
 class HttpResponse {
     friend class HttpResponseBuilder;
@@ -74,7 +76,7 @@ public:
     HttpResponsor() = default;
     HttpResponsor(const HttpResponsor&) = delete;
     ~HttpResponsor() = default;
-    response_sptr_t getResponseFromRequest(HttpRequest&) const;
+    response_sptr_t getResponseFromRequest(HttpRequest&, IRouter&, IResourceAccessor&) const;
     server_err_t response(std::ostream&, HttpResponse&) const;
 };
 

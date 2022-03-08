@@ -28,7 +28,7 @@ int main() {
     if (SERVER_OK != (error=pool->pushConnection(conn))) { cout << error << endl; return -1; }
 
     cout << "pool conn num: " << (int)(pool->curConnNum()) << endl;
-    
+
     RedisCache cache(pool);
 
     do {

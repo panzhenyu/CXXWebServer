@@ -49,7 +49,7 @@ int Worker::maxFDS() { return __eventPoller->maxFDS(); }
 
 int Worker::activeFDS() { return __eventPoller->activeFDS(); }
 
-int Worker::run() {
+server_err_t Worker::run() {
     if (__running) return WORKER_ALREADY_RUNNING;
     __running = true;
     std::thread t([this] () {

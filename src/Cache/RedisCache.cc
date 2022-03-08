@@ -190,7 +190,7 @@ bool RedisCache::get(const key_t& _key, val_t& _retval) {
     bool result;
     RedisConnectionPool::conn_sptr_t conn;
 
-    if (_key.length() >= MAX_KEY_LEN) return false;
+    if (!validKey(_key)) return false;
     if (nullptr == (conn=__connPool->getOneConnection())) return false;
 
     result = conn->getKey(_key, _retval);
@@ -202,10 +202,14 @@ bool RedisCache::put(const key_t& _key, const val_t& _val) {
     bool result;
     RedisConnectionPool::conn_sptr_t conn;
 
-    if (_key.length()>=MAX_KEY_LEN || _val.length()>=MAX_VAL_LEN) return false;
+    if (!validKey(_key) || !validVal(_val)) return false;
     if (nullptr == (conn=__connPool->getOneConnection())) return false;
 
     result = conn->putKey(_key, _val);
     __connPool->returnConnection(conn);
     return result;
 }
+
+bool RedisCache::validKey(const key_t& _key) { return _key.length() < MAX_KEY_LEN; }
+
+bool RedisCache::validVal(const val_t& _val) { return _val.length() < MAX_VAL_LEN; }

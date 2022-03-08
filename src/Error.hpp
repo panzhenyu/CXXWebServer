@@ -19,7 +19,7 @@ enum Error {
 
     STATIC_RESOURCE_ACCESS_FAILED, 
 
-    INVLIAD_REDIS_CONNECTION, 
+    NULL_REDIS_CONNECTION, REDIS_SERVER_INIT_FAILED, 
 };
 
 // static const char* errMsg[] = {

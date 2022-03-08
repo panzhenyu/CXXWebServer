@@ -44,7 +44,7 @@ std::string HttpRequest::serialize() const {
 }
 
 HttpRequestBuilder::HttpRequestBuilder(): 
-    __obj(std::shared_ptr<HttpRequest>(new HttpRequest())) {}
+    __obj(std::shared_ptr<HttpRequest>(new HttpRequest)) {}
 
 HttpRequestBuilder::request_sptr_t HttpRequestBuilder::build() { return __obj; }
 

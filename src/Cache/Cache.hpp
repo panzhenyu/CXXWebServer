@@ -14,6 +14,6 @@ protected:
     ICache(const ICache&) = delete;
     virtual ~ICache() = default;
 public:
-    virtual std::pair<bool, val_t> get(const key_t&) = 0;
+    virtual bool get(const key_t&, val_t&) = 0;
     virtual bool put(const key_t&, const val_t&) = 0;
 };

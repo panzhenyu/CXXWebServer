@@ -14,19 +14,74 @@ class RedisConnectionPool;
  * 3. Use a time lock to avoid waiting for a long time.
  */
 class RedisConnection {
+    friend class RedisConnectionBuilder;
 public:
-    using timeout_t = std::chrono::milliseconds;
+    using key_t         = std::string;
+    using val_t         = std::string;
+    using timeout_t     = std::chrono::milliseconds;
+    using pool_wptr_t   = std::weak_ptr<RedisConnectionPool>;
+    using pool_sptr_t   = std::weak_ptr<RedisConnectionPool>;
+protected:
+    /* Helper functions for RedisConnection initialization */
+    RedisConnection();
+    void setIP(const std::string&);
+    void setPort(uint16_t);
+    void setPasswd(const std::string&);
+    void setLockTimeout(timeout_t);
+    void setReqTimeout(timeout_t);
+    void setPool(pool_sptr_t);
 public:
-    RedisConnection(redisContext*, RedisConnectionPool&, timeout_t _lockTimeout, timeout_t _reqTimeout);
     RedisConnection(const RedisConnection&) = delete;
     ~RedisConnection();
 
+    bool getKey(const key_t&, val_t&);
+    bool putKey(const key_t&, const val_t&);
+    server_err_t contextInit();
+    void close();
 private:
-    redisContext*           __context;
-    RedisConnectionPool&    __pool;
-    std::timed_mutex        __lock;
-    timeout_t               __lockTimeout;
-    timeout_t               __reqTimeout;
+    std::string         __ip;
+    uint16_t            __port;
+    std::string         __passwd;
+    redisContext*       __context;
+    pool_wptr_t         __pool;
+    std::timed_mutex    __lock;
+    timeout_t           __lockTimeout;
+    timeout_t           __reqTimeout;
+};
+
+struct IRedisConnectionBuilder {
+    using conn_sptr_t   = std::shared_ptr<RedisConnection>;
+    using timeout_t     = RedisConnection::timeout_t;
+    using pool_sptr_t   = RedisConnection::pool_sptr_t;
+protected:
+    IRedisConnectionBuilder() = default;
+    IRedisConnectionBuilder(const IRedisConnectionBuilder&) = delete;
+    virtual ~IRedisConnectionBuilder() = default;
+public:
+    virtual IRedisConnectionBuilder& setIP(const std::string&) = 0;
+    virtual IRedisConnectionBuilder& setPort(uint16_t) = 0;
+    virtual IRedisConnectionBuilder& setPasswd(const std::string&) = 0;
+    virtual IRedisConnectionBuilder& setLockTimeout(timeout_t) = 0;
+    virtual IRedisConnectionBuilder& setReqTimeout(timeout_t) = 0;
+    virtual IRedisConnectionBuilder& setPool(pool_sptr_t) = 0;
+    virtual conn_sptr_t build() = 0;
+};
+
+class RedisConnectionBuilder: public IRedisConnectionBuilder {
+public:
+    RedisConnectionBuilder();
+    RedisConnectionBuilder(const RedisConnectionBuilder&) = delete;
+    virtual ~RedisConnectionBuilder() = default;
+
+    virtual IRedisConnectionBuilder& setIP(const std::string&);
+    virtual IRedisConnectionBuilder& setPort(uint16_t);
+    virtual IRedisConnectionBuilder& setPasswd(const std::string&);
+    virtual IRedisConnectionBuilder& setLockTimeout(timeout_t);
+    virtual IRedisConnectionBuilder& setReqTimeout(timeout_t);
+    virtual IRedisConnectionBuilder& setPool(pool_sptr_t);
+    virtual conn_sptr_t build();
+private:
+    conn_sptr_t __obj;
 };
 
 /*
@@ -50,7 +105,7 @@ public:
     RedisConnectionPool(const RedisConnectionPool&) = delete;
     ~RedisConnectionPool();
 
-    server_err_t pushConnection(conn_sptr_t);
+    server_err_t pushConnection(const conn_sptr_t);
     uint8_t curConnNum();
     server_err_t clear();
     /*
@@ -58,6 +113,7 @@ public:
      * If there isn't a RedisConnection available, return nullptr.
      */
     conn_sptr_t getOneConnection();
+    void returnConnection(const conn_sptr_t);
 private:
     /*
      * This lock only protected __conns, cause __maxConn
@@ -75,14 +131,16 @@ private:
  * RedisCache must implement thread-safe member functions
  */
 class RedisCache: public ICache<ValidResource::path_t, std::string> {
-    using redis_pool_stpr_t = std::shared_ptr<RedisConnectionPool>;
+    using poll_sptr_t = std::shared_ptr<RedisConnectionPool>;
+    static constexpr unsigned MAX_KEY_LEN = (1 << 20);
+    static constexpr unsigned MAX_VAL_LEN = (1 << 20);
 public:
-    RedisCache(redis_pool_stpr_t);
+    RedisCache(poll_sptr_t);
     RedisCache(const RedisCache&) = delete;
     virtual ~RedisCache() = default;
     // get a RedisConnection from RedisConnectionPool and do put|get with it.
-    virtual std::pair<bool, val_t> get(const key_t&) override;
+    virtual bool get(const key_t&, val_t&) override;
     virtual bool put(const key_t&, const val_t&) override;
 private:
-    redis_pool_stpr_t   __connPool;
+    poll_sptr_t __connPool;
 };

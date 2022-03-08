@@ -96,6 +96,7 @@ HttpResponsor::response_sptr_t HttpResponsor::getResponseFromRequest(HttpRequest
     if (err != SERVER_OK) staticBody = router.getDefaultErrorPage(code);
 
 buildObj:
+    // may be set header?
     return builder.setHttpVersion(version).setResponseStatus(code).setBody(staticBody).build();
 }
 
@@ -151,14 +152,18 @@ HttpResponse& _response) const {
     std::streampos bodyLen;
     HttpResponse::body_t body;
 
+    // gen response line
     if (SERVER_OK!=(error=genResponseLine(_output, _response)) || _output.fail()) goto out;
 
-    // set Content-Length before generate head
+    // set Content-Length & mime type
     body = _response.getBody(); body->seekg(0, body->end); bodyLen = body->tellg(); body->seekg(0, body->beg);
     if (bodyLen != -1) _response.setHeader("Content-Length", to_string(bodyLen));
     else { error = INVALID_CONTENT_LENGTH; goto out; }
+
+    // gen head
     if (SERVER_OK!=(error=genResponseHead(_output, _response)) || _output.fail()) goto out;
 
+    // gen body
     if ((_output<<RESPONSE_ENDLINE).fail()) { error = GEN_RESPONSE_BODY_FAILED; goto out; }
     error = genResponseBody(_output, _response, (long)bodyLen);
 out:

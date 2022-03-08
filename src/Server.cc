@@ -24,8 +24,8 @@ static ServerConfig defaultCfg = {
         .__redisServerHasPasswd = true, 
         .__maxConn = 8, 
         .__maxRef = 2, 
-        .__responseTimeout = ServerConfig::timeout_t(100), 
-        .__lockTimeout = ServerConfig::timeout_t(800), 
+        .__responseTimeout = ServerConfig::timeout_t(500), 
+        .__lockTimeout = ServerConfig::timeout_t(1000), 
     }, 
     .__cacheEnable = true, 
 };

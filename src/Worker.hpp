@@ -25,8 +25,8 @@ private:
      * 反向代理：
      * 再添加一个poller监听子服务器，并维护客户端fd、服务器端fd的map
      * 当子服务器响应，根据服务器端fd获取客户端fd，将结果回送
-     * 还需维护一个全局的服务器端fd链接池，每次使用完毕后归还fd
-     * 也可以考虑将上述内容维护在EventHandler对象中？
+     * 还需维护一个全局的服务器端fd链接池，每次使用完毕后归还fd?
+     * 也可以考虑将上述内容维护在EventHandler对象中?
      */
 public:
     Worker(epoll_uptr_t&&, handler_uptr_t&&);

@@ -1,8 +1,10 @@
-#include <queue>
+#include <map>
 #include <chrono>
 #include <hiredis/hiredis.h>
 #include "Cache.hpp"
 #include "../HttpUtils/ResourceAccessor.hpp"
+
+#define DEFAULT_REPLY_TIMEOUT   10000
 
 class RedisConnectionPool;
 /*
@@ -37,7 +39,6 @@ public:
     bool getKey(const key_t&, val_t&);
     bool putKey(const key_t&, const val_t&);
     server_err_t contextInit();
-    void close();
 private:
     std::string         __ip;
     uint16_t            __port;
@@ -89,17 +90,10 @@ private:
  * Must implement thread-safe member functions.
  */
 class RedisConnectionPool {
-    struct PrioQueueComp;
 public:
     using ref_count_t       = unsigned;
     using conn_sptr_t       = std::shared_ptr<RedisConnection>;
-    using prioq_elem_t      = std::pair<conn_sptr_t, ref_count_t>;
-    using conn_prio_queue_t = std::priority_queue<prioq_elem_t, std::vector<prioq_elem_t>, PrioQueueComp>;
-private:
-    struct PrioQueueComp {
-        // Build a small root heap to return the conn with minimum use count.
-        bool operator()(const prioq_elem_t& _chs, const prioq_elem_t& _rhs) const;
-    };
+    using conn_ref_map_t    = std::map<conn_sptr_t, ref_count_t>;
 public:
     RedisConnectionPool(uint8_t, unsigned);
     RedisConnectionPool(const RedisConnectionPool&) = delete;
@@ -120,7 +114,7 @@ private:
      * and __maxRefPerConn won't be changed anymore.
      */
     std::mutex          __lock;     
-    conn_prio_queue_t   __conns;
+    conn_ref_map_t      __conns;
     uint8_t             __maxConn;
     unsigned            __maxRef;
 };
@@ -131,6 +125,7 @@ private:
  * RedisCache must implement thread-safe member functions
  */
 class RedisCache: public ICache<ValidResource::path_t, std::string> {
+public:
     using poll_sptr_t = std::shared_ptr<RedisConnectionPool>;
     static constexpr unsigned MAX_KEY_LEN = (1 << 20);
     static constexpr unsigned MAX_VAL_LEN = (1 << 20);

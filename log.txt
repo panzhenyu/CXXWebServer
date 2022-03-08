@@ -83,7 +83,7 @@
     2. 修正了HttpUtils中大部分类的getter函数，为其加上了const。
 
 2022.3.7
-    1. 完成了Cache模块的大部分设计与实现。
+    1. 完成了Cache模块的实现与测试。
     2. 两个问题：
         1) HttpResponse中没有考虑到MIME类型，需要在后续添加对MIME类型的判断(可以先直接复制Request中的MIME类型)。
         2) 当前IOEventHandler既处理客户端链接的IO，又处理请求解析与响应构造，缺乏一种将IO与计算分离的机制。

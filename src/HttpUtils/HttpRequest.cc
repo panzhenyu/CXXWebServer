@@ -141,6 +141,11 @@ server_err_t HttpRequestAnalyser::parseBody(std::istream& _input, HttpRequestBui
     return SERVER_OK;
 }
 
+/*
+ * Get a HttpRequest object from _input. For some error
+ * such as unsupported http version, request should ret
+ * normally with _err set.
+ */
 HttpRequestAnalyser::request_sptr_t HttpRequestAnalyser::getOneHttpRequest(
 std::istream& _input, 
 server_err_t& _err) {

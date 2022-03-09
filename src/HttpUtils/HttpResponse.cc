@@ -85,7 +85,7 @@ IResourceAccessor& _accessor) const {
         switch (resource->getType()) {
             case GeneralResource::STATIC:
                 staticBody = _accessor.access(static_cast<StaticResource&>(*resource), err);
-                if (SERVER_OK == err) goto buildObj;
+                if (SERVER_OK==err && staticBody!=nullptr) { code = 200; goto buildObj; }
                 code = 500; break;
             case GeneralResource::CGI:
                 // not complete
@@ -97,7 +97,7 @@ IResourceAccessor& _accessor) const {
     // try to get error page body, if error page isn't setted, return a default error page
     if ((resource=_router[code])->getType() != GeneralResource::INVALID)
         staticBody = _accessor.access(static_cast<StaticResource&>(*resource), err);
-    if (err != SERVER_OK) staticBody = _router.getDefaultErrorPage(code);
+    if (staticBody==nullptr || err!=SERVER_OK) staticBody = _router.getDefaultErrorPage(code);
 
 buildObj:
     // may be set header?

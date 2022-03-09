@@ -6,7 +6,9 @@ Router::Router() { doLoad(DEFAULT_MAPPING_PATH); }
 server_err_t Router::doLoad(const std::string& _path) {
     // fill uri mapper & err mapper
     __uriMapper["/hello"] = std::make_shared<StaticResource>("./hello.html", "/hello");
-    __errMapper[404] = std::make_shared<StaticResource>("./404.html", "/404");
+    __uriMapper["/"] = std::make_shared<StaticResource>("./StaticFiles/index.html", "/");
+    __errMapper[404] = std::make_shared<StaticResource>("./StaticFiles/404.html", "/404");
+    __errMapper[500] = std::make_shared<StaticResource>("./StaticFiles/500.html", "/500");
     return SERVER_OK;
 }
 

@@ -37,7 +37,7 @@ std::string serialize(HttpVersion _v) { return HttpVersionString[_v]; }
 std::ostream& operator<<(std::ostream& _o, HttpVersion _v) { return _o << serialize(_v); }
 
 static std::unordered_map<statecode_t, std::string> StatusCodeDetail = {
-    {200, "OK"}, 
+    {200, "OK"}, {206, "Partial Content"}, 
     {400, "Bad Request"}, {403, "Forbidden"}, {404, "Not Found"}, 
     {500, "Internal Server Error"}, {501, "Not Implemented"}, 
     {502, "Bad Gateway"}, {505, "HTTP Version not supported"}, 

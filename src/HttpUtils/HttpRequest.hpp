@@ -86,7 +86,6 @@ public:
     HttpRequestAnalyser() = default;
     HttpRequestAnalyser(const HttpRequestAnalyser&) = delete;
     ~HttpRequestAnalyser() = default;
-    // for some error(.e.g unsupported http version), request should be returned normally
     request_sptr_t getOneHttpRequest(std::istream&, server_err_t&);
 };
 

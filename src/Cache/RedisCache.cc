@@ -48,6 +48,9 @@ server_err_t RedisConnection::contextInit() {
     return SERVER_OK;
 }
 
+/*
+ * When getKey get the lock, you shouldn't call return in process body.
+ */
 bool RedisConnection::getKey(const key_t& _key, val_t& _retval) {
     bool ok;
     redisReply *reply;
@@ -56,18 +59,17 @@ bool RedisConnection::getKey(const key_t& _key, val_t& _retval) {
     if (__lockTimeout.count() == 0) __lock.lock();
     else if (!__lock.try_lock_for(__lockTimeout)) return false;
     
+    ok = false;
     reply = (redisReply*)redisCommand(__context, "GET %s", _key.c_str());
-    if (reply == nullptr) return false;
-
+    if (reply == nullptr) goto out;
     switch (reply->type) {
         case REDIS_REPLY_STRING:
-            _retval = std::string(reply->str, reply->len); break;
+            _retval = std::string(reply->str, reply->len);
+            ok = true; break;
         case REDIS_REPLY_INTEGER:
-            _retval = std::to_string(reply->integer); break;
-        default:
-            ok = false; goto out;
+            _retval = std::to_string(reply->integer);
+            ok = true; break;
     }
-    ok = true;
 
 out:
     freeReplyObject(reply);
@@ -83,13 +85,14 @@ bool RedisConnection::putKey(const key_t& _key, const val_t& _val) {
     if (__lockTimeout.count() == 0) __lock.lock();
     else if (!__lock.try_lock_for(__lockTimeout)) return false;
 
+    ok = false;
     reply = (redisReply*)redisCommand(__context, "SET %s %b", 
         _key.c_str(), _val.data(), _val.length());
-    if (reply == nullptr) return false;
+    if (reply == nullptr) goto out;
     if (reply->type==REDIS_REPLY_STATUS && 
         !std::strcmp("OK", reply->str)) ok = true;
-    else ok = false;
 
+out:
     freeReplyObject(reply);
     __lock.unlock();
     return ok;

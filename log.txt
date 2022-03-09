@@ -94,4 +94,21 @@
     HTTP响应，因此Server将会传递Router与ResourceAccessor给IOEVentHandler，使其能够正常根据请求构造响应。
     3. 重新组织了Server的函数，将初始化、清理、停止三类功能分离，并加入ResourceAccessor与Router的初始化，其中若启用了RedisCache功能，还会
     初始化RedisCache来构造CachedResourceAccessor。
-    4. 将Cache模块加入后暂时正常运行。
+    4. 将Cache模块加入后暂时正常运行，但是运行一段时间后响应变慢，目前原因不明，可能与锁有关？
+    5. 将RedisCache关闭后，ResourceAccessor自动采用FileAccessor，但是随后运行出现段错误。
+
+2022.3.9
+    1. FileAccessor出现段错误的原因为未找到文件后没有及时设置错误码，只返回一个nullptr，此时调用者由于只根据错误码判断返回结果是否有效，因
+    此没有感知到空指针。现在FileAccessor找不到目标文件或者打开失败时会设置错误码，并且调用者不仅判断错误码，还会再次判断返回的指针是否为空。
+    2. 替换Accessor为FileAccessor后没有出现响应变慢的问题，因此可能响应变慢还是由CachedResourceAccessor导致的。
+    3. 为Router添加真实存在的文件后，用WebBench模拟访问(5000 clients, 300s)检验FileAccessor对文件读取的功能是否正常，目前没有发现问题。
+    4. 重新启用CachedResourceAccessor，但是禁用cache miss时拷贝文件内容到string的过程以排除拷贝过程带来的影响，继续用WebBench测试，没有出
+    现昨天的响应变慢的情况。在cache miss部分多加一条put语句，用redic-cli确保执行，再次使用WebBench进行测试，也没有出现响应变慢的情况，问题
+    应该出在复制文件内容到字符串。重新激活字符串赋值部分，但是仍走cache访问，这样在每个页面在第一次失效后就被缓存到Cache，可以判断get是否存
+    在问题，再次用WebBench检测，过一段时间后出现响应变慢的情况，观察控制台输出发现仍然有从FileAccessor获取文件的输出，由此可能是get函数或文
+    件拷贝出现的问题(由于速度变慢了，等待redis的响应存在超时返回的情况，因此从FileAccessor取文件不一定表示get有问题)。
+    5. 去掉所有的cache操作，只留下文件内容拷贝部分，再次测试，没有出现异常。
+    6. 响应变慢是因为获取不到timed_lock，超时后去访问FileLoader，根本原因在于RedisConnection中的get/put函数在获取到锁后没有处理好锁的释放
+    ，具体地，当redisReply为0时(此时已经获取到锁)，没有unlock就直接返回false，导致RedisConnection不可用，致使后续线程访问锁时皆超时。修改
+    后再用WebBench测试，响应变慢的现象消失，似乎没有问题了。
+    7. HttpResponse中在正确获取到静态资源后没有加上状态码，现在当正确获取资源后会将状态码设置为200，在浏览器端能看到正确的状态码响应。

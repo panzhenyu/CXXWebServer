@@ -10,30 +10,33 @@ AsyncLogger& AsyncLogger::getAsyncLogger() {
 
 AsyncLogger::AsyncLogger(): __overflow(DEFAULT_OVERFLOW), __running(false) {
     setLogFile(DEFAULT_LOG);
-    // auto threadFunc = std::bind(&AsyncLogger::run, this);
+    auto threadFunc = std::bind(&AsyncLogger::run, this);
 
-    // __running = true;
-    // std::thread t([&]() {
-    //     threadFunc();
-    //     stop();
-    // });
-    // __threadID = t.get_id();
-    // t.detach();
+    __running = true;
+    std::thread t([threadFunc, this]() {
+        threadFunc();
+        stop();
+    });
+    __threadID = t.get_id();
+    t.detach();
 }
 
 void AsyncLogger::run() {
-    server_err_t error = SERVER_OK;
-    while (isRunning() && SERVER_OK==error && __out.is_open()) {
+    while (isRunning()) {
         std::unique_lock<std::mutex> alternateLck(__lockAlternate);
         while (__alternate.size() == 0) {
-            __waitAlternateWritable.wait_for(alternateLck, std::chrono::seconds(10));
+            __waitAlternateWritable.wait_for(alternateLck, std::chrono::seconds(2));
+            // std::cout << "writer ready to wait" << std::endl;
+            // __waitAlternateWritable.wait(alternateLck);
             if (__alternate.size()==0 && __lockCurrent.try_lock()) {
                 if (__current.size()) __alternate.swap(__current);
                 __lockCurrent.unlock();
             }
+            // std::cout << "writer wake up with alternate size: " << __alternate.size() << std::endl;
         }
-        error = flushAlternate2LogFile();
+        flushAlternate2LogFile();
         __alternate.clear();
+        // std::cout << "alternate size after clear: " << __alternate.size() << std::endl;
         __waitAlternateWriteDone.notify_one();
     }
 }
@@ -51,7 +54,9 @@ void AsyncLogger::append2Current(ch_buff_t&& _buff) {
 
 server_err_t AsyncLogger::flushAlternate2LogFile() {
     server_err_t error = SERVER_OK;
+
     if (!__out.is_open()) return LOGFILE_NOT_OPEN;
+    std::cout << "ready to flush" << std::endl;
     for (auto& buffer : __alternate) {
         if (__out.write(buffer.begin(), buffer.length()).fail()) {
             error = LOGFILE_WRITE_FAILE;
@@ -59,24 +64,24 @@ server_err_t AsyncLogger::flushAlternate2LogFile() {
         }
     }
     __out.flush();
-    __out.close();
+
     return error;
 }
 
 AsyncLogger::~AsyncLogger() {
     if (isRunning()) stop();
-    while (true) {
-        if (__alternate.size()) {
-            std::unique_lock<std::mutex> alternateLck(__lockAlternate);
-            flushAlternate2LogFile();
-            __alternate.clear();
-            __waitAlternateWriteDone.notify_one();
-        } else if (__lockCurrent.try_lock()) {
-            if (__current.size()) __alternate.swap(__current);
-            __lockCurrent.unlock();
-        }
-        if (!__alternate.size() && !__current.size()) break;
-    }
+    // while (true) {
+    //     if (__alternate.size()) {
+    //         std::unique_lock<std::mutex> alternateLck(__lockAlternate);
+    //         flushAlternate2LogFile();
+    //         __alternate.clear();
+    //         __waitAlternateWriteDone.notify_one();
+    //     } else if (__lockCurrent.try_lock()) {
+    //         if (__current.size()) __alternate.swap(__current);
+    //         __lockCurrent.unlock();
+    //     }
+    //     if (!__alternate.size() && !__current.size()) break;
+    // }
     __out.flush();
     __out.close();
 }
@@ -106,16 +111,18 @@ server_err_t AsyncLogger::setLogFile(const std::string& _path) {
 }
 
 server_err_t AsyncLogger::append(ch_buff_t&& _b) {
-    std::cout << _b.length() << std::endl;
-    std::cout << _b.begin() << std::endl;
-    append2Current(std::move(_b));
     if (!isRunning()) return LOG_THREAD_STOPPED;
 
     std::lock_guard<std::mutex> currentLck(__lockCurrent);
-    if (currentAvailable4(_b)) append2Current(std::move(_b));
+    if (currentAvailable4(_b)) {
+        std::cout << "append directly" << std::endl;
+        append2Current(std::move(_b));
+    }
     else {
+        std::cout << "try to swap" << std::endl;
         std::unique_lock<std::mutex> alternateLck(__lockAlternate);
         while (__alternate.size()) __waitAlternateWriteDone.wait(alternateLck);
+        // std::cout << "begin to swap" << std::endl;
         __current.swap(__alternate);
         __waitAlternateWritable.notify_one();
 

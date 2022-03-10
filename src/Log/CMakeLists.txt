@@ -1,6 +1,7 @@
 set(SRCS
     AsyncLogger.cc
-    Buffer.cc
+    Logger.cc
+    LogStream.cc
 )
 
 add_library(Log ${SRCS})

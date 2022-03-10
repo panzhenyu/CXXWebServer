@@ -7,6 +7,8 @@
 #include "../Error.hpp"
 #include "HttpConfig.hpp"
 
+#define DEFAULT_MAPPING_PATH    "web.xml"
+
 struct IRouter {
 public:
     using uri_t             = std::string;

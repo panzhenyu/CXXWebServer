@@ -3,7 +3,6 @@
 #include <string>
 #include <ostream>
 
-#define DEFAULT_MAPPING_PATH    "web.xml"
 #define RESPONSE_ENDLINE '\n'
 
 enum HttpRequestMethod {

@@ -16,7 +16,7 @@
 static ServerConfig defaultCfg = {
     .__maxFD = 100000, 
     .__clientTimeoutSecond = 60, 
-    .__workerNum = 7, 
+    .__workerNum = 5, 
     .__serverAddr = INADDR_ANY, 
     .__serverPort = 8888, 
     .__listenQueue = 1000, 

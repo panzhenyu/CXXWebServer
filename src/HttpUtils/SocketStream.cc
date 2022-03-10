@@ -47,8 +47,8 @@ SocketStreamBuffer::int_type SocketStreamBuffer::underflow() {
     return *gptr();
 }
 
-SocketInputStream::SocketInputStream(ssbuff_sptr_t _buff):
+SocketInputStream::SocketInputStream(ssbuff_uptr_t _buff):
     std::istream(_buff.get()), __buffer(_buff) {}
 
-SocketOutputStream::SocketOutputStream(ssbuff_sptr_t _buff):
+SocketOutputStream::SocketOutputStream(ssbuff_uptr_t _buff):
     std::ostream(_buff.get()), __buffer(_buff)  {}

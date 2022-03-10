@@ -25,8 +25,8 @@ int IOEventHandler::handle(event_sptr_t _event) {
     std::shared_ptr<SocketOutputStream> out;
 
     fd = _event->getFD();
-    in = std::make_shared<SocketInputStream>(std::make_shared<SocketStreamBuffer>(fd));
-    out = std::make_shared<SocketOutputStream>(std::make_shared<SocketStreamBuffer>(fd));
+    in = std::make_shared<SocketInputStream>(std::make_unique<SocketStreamBuffer>(fd));
+    out = std::make_shared<SocketOutputStream>(std::make_unique<SocketStreamBuffer>(fd));
     while (!in->eof()) {
         req = analyser.getOneHttpRequest(*in, error);
         std::cout << "getOneHttpRequest returned with error: " << error << std::endl;

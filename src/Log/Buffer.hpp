@@ -35,6 +35,12 @@ public:
 
     unsigned rest() { return capacity() - length(); }
 
+    void setLength(unsigned _len) {
+        if (_len <= capacity())
+            __cur = begin() + _len;
+        else __cur = end();
+    }
+
     pointer_t begin() { return &__chBuffer[0]; }
 
     pointer_t cur() { return __cur; }

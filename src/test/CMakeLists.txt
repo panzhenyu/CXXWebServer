@@ -15,3 +15,6 @@ target_link_libraries(RedisCacheTest Cache hiredis)
 
 add_executable(BufferTest BufferTest.cc)
 target_link_libraries(BufferTest Log)
+
+add_executable(LoggerTest LoggerTest.cc)
+target_link_libraries(LoggerTest Log pthread)

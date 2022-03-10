@@ -5,3 +5,4 @@ set(SRCS
 )
 
 add_library(Log ${SRCS})
+target_link_libraries(Log pthread)

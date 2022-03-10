@@ -9,6 +9,8 @@
 #include "Buffer.hpp"
 #include "../Error.hpp"
 
+#define DEFAULT_LOG "WebServer.log"
+
 /*
  * AsyncLogger
  * Performed in a singleton pattern.

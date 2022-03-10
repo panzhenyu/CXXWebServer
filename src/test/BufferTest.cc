@@ -4,13 +4,11 @@
 
 using namespace std;
 
-struct Test {
-    Test() { cout << "default" << endl; }
-    Test(const Test&) { cout << "copy" << endl; }
-    Test(Test&&) { cout << "move" << endl; }
-};
-
 int main() {
-
+    Buffer<char> buff;
+    string s("FDSFSF");
+    while (1) {
+        buff.append(s.begin(), s.end());
+    }
     return 0;
 }

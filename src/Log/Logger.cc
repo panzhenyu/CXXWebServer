@@ -1,4 +1,5 @@
 #include <ctime>
+#include <cstring>
 #include "Logger.hpp"
 #include "LogStream.hpp"
 
@@ -18,6 +19,7 @@ void Logger::logCurrentTime() {
     time(&rawtime);
     info = localtime(&rawtime);
     if (info && (timestr=asctime(info))) {
+        timestr[std::strlen(timestr)-1] = '\0';
         getLogStream() << '[' << timestr << ']';
     } else getLogStream() << "[??]";
 }
@@ -25,10 +27,11 @@ void Logger::logCurrentTime() {
 void Logger::logBeginTag() {
     // log begin time
     logCurrentTime();
-    getLogStream() << "Log begin by " << __file << ": " << __line << '.' << std::endl;
+    getLogStream() << " Logged by: " << __file << ": " << __line << '.' << std::endl;
 }
 
 void Logger::logEndTag() {
+    getLogStream() << '\n';
     logCurrentTime();
-    getLogStream() << "Logged end." << std::endl;
+    getLogStream() << " Logged end." << std::endl;
 }

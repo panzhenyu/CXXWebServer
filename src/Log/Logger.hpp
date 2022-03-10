@@ -33,4 +33,4 @@ private:
 #define LOG2DIARY   (Logger(__FILE__, __LINE__, \
     std::make_shared<LogStream>(                \
         std::make_shared<LogStreamBuffer>(      \
-            AsyncLogger::getAsyncLogger()))).getStream())
+            AsyncLogger::getAsyncLogger()))).getLogStream())

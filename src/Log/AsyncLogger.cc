@@ -1,5 +1,4 @@
 #include <thread>
-#include <iostream>
 #include <algorithm>
 #include "AsyncLogger.hpp"
 
@@ -8,8 +7,8 @@ AsyncLogger& AsyncLogger::getAsyncLogger() {
     return logger;
 }
 
-AsyncLogger::AsyncLogger(): __overflow(DEFAULT_OVERFLOW), __running(false) {
-    setLogFile(DEFAULT_LOG);
+AsyncLogger::AsyncLogger(): 
+__overflow(DEFAULT_OVERFLOW), __secondTimeout(DEFAULT_TIMEOUT), __running(false) {
     auto threadFunc = std::bind(&AsyncLogger::run, this);
 
     __running = true;
@@ -22,45 +21,54 @@ AsyncLogger::AsyncLogger(): __overflow(DEFAULT_OVERFLOW), __running(false) {
 }
 
 void AsyncLogger::run() {
+    std::cv_status waitStatus = std::cv_status::no_timeout;
     while (isRunning()) {
-        std::unique_lock<std::mutex> alternateLck(__lockAlternate);
-        while (__alternate.size() == 0) {
-            __waitAlternateWritable.wait_for(alternateLck, std::chrono::seconds(2));
-            // std::cout << "writer ready to wait" << std::endl;
-            // __waitAlternateWritable.wait(alternateLck);
-            if (__alternate.size()==0 && __lockCurrent.try_lock()) {
-                if (__current.size()) __alternate.swap(__current);
-                __lockCurrent.unlock();
-            }
-            // std::cout << "writer wake up with alternate size: " << __alternate.size() << std::endl;
+        std::unique_lock<buff_mtx_t> bufferLck(__lockBuff);
+        while (!__alternate.size() && waitStatus!=std::cv_status::timeout) {
+            waitStatus = __wait4Flush.wait_for(bufferLck, std::chrono::seconds(__secondTimeout));
         }
-        flushAlternate2LogFile();
-        __alternate.clear();
-        // std::cout << "alternate size after clear: " << __alternate.size() << std::endl;
-        __waitAlternateWriteDone.notify_one();
+        __loggerLocal.swap(__alternate);
+        if (std::cv_status::timeout == waitStatus){
+            __loggerLocal.insert(__loggerLocal.end(), std::make_move_iterator(__current.begin()),
+                std::make_move_iterator(__current.end()));
+            __current.clear();
+            waitStatus = std::cv_status::no_timeout;
+        }
+        bufferLck.unlock();
+
+        std::lock_guard<file_mtx_t> fileLck(__lockLogFile);
+        flush2LogFile(__loggerLocal);
+        __loggerLocal.clear();
     }
 }
 
 bool AsyncLogger::currentAvailable4(ch_buff_t& _buff) {
-    return __current.empty() || __current.back().rest()<=_buff.length() || __current.size()<__overflow;
+    return  __current.empty() || 
+            __current.back().rest() <= _buff.length() || 
+            __current.size() < __overflow;
 }
 
 void AsyncLogger::append2Current(ch_buff_t&& _buff) {
-    if (__current.empty()) __current.push_back(std::move(_buff));
-    else if (__current.back().rest() >= _buff.length())
-        __current.back().append(_buff.begin(), _buff.cur());
-    else __current.push_back(std::move(_buff));
+    if (__current.empty() || __current.back().rest()<_buff.length()) {
+        __current.push_back(std::move(_buff));
+    } else __current.back().append(_buff.begin(), _buff.cur());
 }
 
-server_err_t AsyncLogger::flushAlternate2LogFile() {
-    server_err_t error = SERVER_OK;
+/*
+ * AsyncLogger::flush2LogFile
+ * Flush all contents of _buffs into current log file.
+ * If log file isn't opened, return an error.
+ * If write failed, try to reopen.
+ */
+server_err_t AsyncLogger::flush2LogFile(buffs_t& _buffs) {
+    server_err_t error;
+    if (!__out.is_open()) return LOGFILE_OPEN_FAILED;
 
-    if (!__out.is_open()) return LOGFILE_NOT_OPEN;
-    std::cout << "ready to flush" << std::endl;
-    for (auto& buffer : __alternate) {
+    error = SERVER_OK;
+    for (auto& buffer : _buffs) {
         if (__out.write(buffer.begin(), buffer.length()).fail()) {
             error = LOGFILE_WRITE_FAILE;
-            stop(); break;
+            setLogFile(getLogFile());
         }
     }
     __out.flush();
@@ -70,18 +78,14 @@ server_err_t AsyncLogger::flushAlternate2LogFile() {
 
 AsyncLogger::~AsyncLogger() {
     if (isRunning()) stop();
-    // while (true) {
-    //     if (__alternate.size()) {
-    //         std::unique_lock<std::mutex> alternateLck(__lockAlternate);
-    //         flushAlternate2LogFile();
-    //         __alternate.clear();
-    //         __waitAlternateWriteDone.notify_one();
-    //     } else if (__lockCurrent.try_lock()) {
-    //         if (__current.size()) __alternate.swap(__current);
-    //         __lockCurrent.unlock();
-    //     }
-    //     if (!__alternate.size() && !__current.size()) break;
-    // }
+    std::lock_guard<buff_mtx_t> bufferLck(__lockBuff);
+    std::lock_guard<file_mtx_t> fileLck(__lockLogFile);
+    flush2LogFile(__loggerLocal);
+    flush2LogFile(__alternate);
+    flush2LogFile(__current);
+    __current.clear();
+    __alternate.clear();
+    __loggerLocal.clear();
     __out.flush();
     __out.close();
 }
@@ -89,6 +93,17 @@ AsyncLogger::~AsyncLogger() {
 void AsyncLogger::stop() { __running = false; }
 
 bool AsyncLogger::isRunning() { return __running; }
+
+bool AsyncLogger::logFileOn() {
+    std::lock_guard<file_mtx_t> fileLck(__lockLogFile);
+    return __out.is_open();
+}
+
+bool AsyncLogger::setTimeoutSecond(unsigned _s) {
+    if (0 == _s) return false;
+    __secondTimeout = _s;
+    return true;
+}
 
 bool AsyncLogger::setOverflowSize(unsigned _of) {
     if (_of == 0) return false;
@@ -99,35 +114,25 @@ bool AsyncLogger::setOverflowSize(unsigned _of) {
 const std::string& AsyncLogger::getLogFile() { return __logFile; }
 
 server_err_t AsyncLogger::setLogFile(const std::string& _path) {
-    server_err_t error = SERVER_OK;
-    std::lock_guard<std::mutex> currentLck(__lockAlternate);
+    std::lock_guard<file_mtx_t> fileLck(__lockLogFile);
     if (__out.is_open()) {
-        error = flushAlternate2LogFile();
+        __out.flush();
         __out.close();
     }
     __out.open(_path, std::ofstream::app|std::ofstream::out);
-    if (!__out.is_open()) error = LOGFILE_OPEN_FAILED;
-    return error;
+    return __out.is_open() ? SERVER_OK: LOGFILE_OPEN_FAILED;
 }
 
 server_err_t AsyncLogger::append(ch_buff_t&& _b) {
     if (!isRunning()) return LOG_THREAD_STOPPED;
 
-    std::lock_guard<std::mutex> currentLck(__lockCurrent);
-    if (currentAvailable4(_b)) {
-        std::cout << "append directly" << std::endl;
-        append2Current(std::move(_b));
+    std::lock_guard<buff_mtx_t> bufferLck(__lockBuff);
+    while (!currentAvailable4(_b)) {
+        for (auto& buffer : __current) __alternate.push_back(std::move(buffer));
+        __current.clear();
     }
-    else {
-        std::cout << "try to swap" << std::endl;
-        std::unique_lock<std::mutex> alternateLck(__lockAlternate);
-        while (__alternate.size()) __waitAlternateWriteDone.wait(alternateLck);
-        // std::cout << "begin to swap" << std::endl;
-        __current.swap(__alternate);
-        __waitAlternateWritable.notify_one();
+    if (__alternate.size()) __wait4Flush.notify_one();
+    append2Current(std::move(_b));
 
-        if (!currentAvailable4(_b)) return BUFFER_NOTAVAIL_AFTER_SWAP;
-        else __current.push_back(std::move(_b));
-    }
     return SERVER_OK;
 }

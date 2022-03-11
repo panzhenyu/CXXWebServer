@@ -120,3 +120,13 @@
     递的方式传递变量，若是引用传递则会造成段错误。
     4. 用100个线程模拟Log，出现死锁。
 
+2022.3.11
+    1. 3.10中死锁问题的关键在于可能所有producer(Logger调用者)notify结束后，consumer(AsyncLogger线程)才完成写操作，这样生产者和消费者同时进
+    入等待的过程，因循环等待造成死锁。
+    2. 参考了他人对双缓冲的设计，放宽__alternate的缓冲区为无穷大，并且每次AsyncLogger线程都将__alternate中的内容移动到本地变量后再对本地变量
+    进行磁盘写入操作。这样只需要一个锁lockAll与条件变量，lockAll用于保护__current与__alternate，当__current满时直接将其内容移动(追加)到__al
+    ternate中，并对AsyncLogger线程进行一次唤醒，否则也检查一下__alternate是否为空，若不为空则再次唤醒(防止出现log与写入速度差异过大导致唤醒丢
+    失)。AsyncLogger接受到唤醒信号或超时时间后获取__lockAll，将__alternate中的内容与__current中的内容添加到local中，再释放__lockAll以便正常
+    记录日志，随后进行日志持久化操作。
+    3. 修正后用100个线程模拟日志记录，目前没发现问题。
+    4. 将server中原有用cout输出的部分全部转换为log输出。

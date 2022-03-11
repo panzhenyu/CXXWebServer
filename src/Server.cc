@@ -8,7 +8,9 @@
 #include "Event.hpp"
 #include "Worker.hpp"
 #include "Server.hpp"
+#include "Log/Logger.hpp"
 #include "IOEventHandler.hpp"
+#include "Log/AsyncLogger.hpp"
 #include "Cache/RedisCache.hpp"
 #include "HttpUtils/Router.hpp"
 #include "ListenEventHandler.hpp"
@@ -84,17 +86,14 @@ server_err_t Server::initResourceAccessor() {
     return SERVER_OK;
 }
 
-server_err_t Server::initListenWorker() {
+server_err_t Server::initLogger() {
     server_err_t error;
 
-    __listenWorker = std::make_shared<Worker>(
-        std::make_unique<Epoll>(__serverCfg.__maxFD, error), 
-        std::make_unique<ListenEventHandler>(__ioWorkers));
-    if (SERVER_OK != error) return error;
-    if (SERVER_OK != (error=__listenWorker->addEvent(
-        std::make_shared<Event>(__listenFD, EPOLLIN|EPOLLET)))) return error;
+    auto& logger = AsyncLogger::getAsyncLogger();
+    if (!logger.isRunning()) return LOG_THREAD_STOPPED;
+    error = AsyncLogger::getAsyncLogger().setLogFile(DEFAULT_LOG);
 
-    return SERVER_OK;
+    return error;
 }
 
 server_err_t Server::initIOWorker() {
@@ -113,6 +112,19 @@ server_err_t Server::initIOWorker() {
     return SERVER_OK;
 }
 
+server_err_t Server::initListenWorker() {
+    server_err_t error;
+
+    __listenWorker = std::make_shared<Worker>(
+        std::make_unique<Epoll>(__serverCfg.__maxFD, error), 
+        std::make_unique<ListenEventHandler>(__ioWorkers));
+    if (SERVER_OK != error) return error;
+    if (SERVER_OK != (error=__listenWorker->addEvent(
+        std::make_shared<Event>(__listenFD, EPOLLIN|EPOLLET)))) return error;
+
+    return SERVER_OK;
+}
+
 Server::Server(): Server(nullptr) {}
 
 Server::Server(const char* _cfgPath):
@@ -127,12 +139,10 @@ __cfgPath(""), __listenFD(-1), __running(false) {
     __listenFD = -1;
 }
 
-#include <iostream>
-
 Server::~Server() {
     stop();
     clean();
-    std::cout << "server out" << std::endl;
+    LOG2DIARY << "server out" << '\n';
 }
 
 /*
@@ -146,6 +156,7 @@ server_err_t Server::init() {
     if (SERVER_OK != (error=initListenSocket())) return error;
     if (SERVER_OK != (error=initRouter())) return error;
     if (SERVER_OK != (error=initResourceAccessor())) return error;
+    if (SERVER_OK != (error=initLogger())) return error;
     if (SERVER_OK != (error=initIOWorker())) return error;
     if (SERVER_OK != (error=initListenWorker())) return error;
     return SERVER_OK;

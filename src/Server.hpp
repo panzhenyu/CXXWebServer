@@ -72,8 +72,9 @@ private:
     server_err_t initListenSocket();
     server_err_t initRouter();
     server_err_t initResourceAccessor();
-    server_err_t initListenWorker();
+    server_err_t initLogger();
     server_err_t initIOWorker();
+    server_err_t initListenWorker();
     server_err_t init();
     void clean();
 public:

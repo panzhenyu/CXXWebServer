@@ -1,8 +1,8 @@
 #include <cassert>
 #include <unistd.h>
-#include <iostream>
 #include "Event.hpp"
 #include "Worker.hpp"
+#include "Log/Logger.hpp"
 #include "IOEventHandler.hpp"
 #include "HttpUtils/HttpRequest.hpp"
 #include "HttpUtils/SocketStream.hpp"
@@ -29,12 +29,13 @@ int IOEventHandler::handle(event_sptr_t _event) {
     out = std::make_shared<SocketOutputStream>(std::make_unique<SocketStreamBuffer>(fd));
     while (!in->eof()) {
         req = analyser.getOneHttpRequest(*in, error);
-        std::cout << "getOneHttpRequest returned with error: " << error << std::endl;
+        LOG2DIARY << "getOneHttpRequest from clientFD "
+            << fd << " with returned with error: " << error << '\n';
         if (SERVER_OK == error) {
-            std::cout << *req << std::endl;
+            LOG2DIARY << *req << '\n';
             res = responsor.getResponseFromRequest(*req, *__router, *__accessor);
             error = responsor.response(*out, *res);
-            std::cout << "response ret with error: " << error << std::endl;
+            LOG2DIARY << "response ret with error: " << error << '\n';
         }
     }
 

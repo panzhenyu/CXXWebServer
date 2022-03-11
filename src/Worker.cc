@@ -1,8 +1,8 @@
-#include <iostream>
 #include <unistd.h>
 #include "Epoll.hpp"
 #include "Event.hpp"
 #include "Worker.hpp"
+#include "Log/Logger.hpp"
 #include "EventHandler.hpp"
 
 #include <cassert>
@@ -54,6 +54,8 @@ server_err_t Worker::run() {
     __running = true;
     std::thread t([this] () {
         server_err_t error;
+
+        this->__threadID = std::this_thread::get_id();
         while (isRunning()) {
             auto events = eventPoll(error, -1);
             if (SERVER_OK != error) break;
@@ -63,10 +65,10 @@ server_err_t Worker::run() {
             events.clear();
         }
         __running = false;
-        std::cout << "worker exit with err " << error << std::endl;
+        LOG2DIARY << "worker exit with err " << error << '\n';
         return;
     });
-    t.detach(); __threadID = t.get_id();
+    t.detach();
     if (!isRunning()) return WORKER_START_FAILED;
     return SERVER_OK;
 }

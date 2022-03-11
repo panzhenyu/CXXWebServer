@@ -1,11 +1,11 @@
 #include <fcntl.h>
 #include <errno.h>
-#include <iostream>
 #include <unistd.h>
 #include <string.h>
 #include <sys/epoll.h>
 #include "Event.hpp"
 #include "Worker.hpp"
+#include "Log/Logger.hpp"
 #include "ListenEventHandler.hpp"
 
 ListenEventHandler::ListenEventHandler(std::vector<std::shared_ptr<Worker>>& _workers) {
@@ -36,7 +36,8 @@ int ListenEventHandler::handle(event_sptr_t _event) {
         }
         __ioWorkers.erase(__ioWorkers.begin()+i);
         __ioWorkers.push_back(cur);
+
+        LOG2DIARY << "Accept client with clientFD and assign it to worker: " << cur->getThreadID() << '\n';
     }
-    std::cout << "exit listen event with errno " << errno << " " << strerror(errno) << std::endl;
     return SERVER_OK;
 }

@@ -4,7 +4,7 @@
 #include "LogStream.hpp"
 
 Logger::Logger(const std::string& _file, int _line, stream_sptr_t _pStream): 
-__file(__FILE__), __line(__LINE__), __pStream(_pStream) { logBeginTag(); }
+__file(_file), __line(_line), __pStream(_pStream) { logBeginTag(); }
 
 Logger::~Logger() { logEndTag(); }
 
@@ -31,7 +31,6 @@ void Logger::logBeginTag() {
 }
 
 void Logger::logEndTag() {
-    getLogStream() << '\n';
     logCurrentTime();
     getLogStream() << " Logged end." << std::endl;
 }

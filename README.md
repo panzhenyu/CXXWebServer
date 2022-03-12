@@ -1,5 +1,10 @@
 # Web Server
 
+## 前言
+* 这是一个只能返回静态资源的Web服务器，能够根据HTTP请求中的URI回送对应的资源。
+
+* 本项目主要由并发控制、HTTP协议工具、资源缓存、日志四模块构成。其中并发模型与日志模块的设计参考了linyacool的WebServer，详见：```https://github.com/linyacool/WebServer```
+
 ## 准备
 
     安装redis
@@ -33,11 +38,6 @@
     启动redis_server
     cd ${WebServer_ROOT_DIR}/build/src
     ./server
-
-## 前言
-* 这是一个只能返回静态资源的Web服务器，能够根据HTTP请求中的URI回送对应的资源。
-
-* 本项目主要由并发控制、HTTP协议工具、资源缓存、日志四模块构成。其中并发模型与日志模块的设计参考了linyacool的WebServer，详见：```https://github.com/linyacool/WebServer```
 
 ## 模块描述
 ### 并发控制

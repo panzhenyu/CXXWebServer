@@ -16,7 +16,9 @@
 
 在src/Server.cc的defaultCfg变量中可以设置服务器相关的属性。
 
-    修改defaultCfg.__redisConf以配置你的redis_server端口号、密码
+    修改defaultCfg.__redisConf以配置你的redis_server的端口号
+    
+    redis_server的IP、密码设置见Server::Server()
     
     修改defaultCfg.__redisCacheEnable控制是否激活redis缓存功能
 

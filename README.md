@@ -1,18 +1,19 @@
 # Web Server
 
-## 构建
+## 准备
 
-    cd ${WebServer_ROOT_DIR}
-    mkdir build && cd build
-    cmake ..
-    cd src/
-    ./server
+    安装redis
+    拷贝hiredis目录至src/ThirdParty
 
 ## 配置
 
 由于没有完成配置文件的解析，因此目前的配置需要在代码里添加。
 
 在src/Server.cc的defaultCfg变量中可以设置服务器相关的属性。
+
+    修改defaultCfg.__redisConf以配置你的redis_server端口号、密码
+    
+    修改defaultCfg.__redisCacheEnable控制是否激活redis缓存功能
 
 在src/HttpUtils/Router.cc的doLoad方法中配置路由信息。
 
@@ -22,6 +23,16 @@
     其他静态资源路由配置：
     __uriMapper[URI] = std::make_shared<StaticResource>(静态资源路径, URI);
 
+## 构建
+    cd ${WebServer_ROOT_DIR}
+    mkdir build && cd build
+    cmake ..
+    cd src/
+
+## 启动
+    启动redis_server
+    cd ${WebServer_ROOT_DIR}/build/src
+    ./server
 
 ## 前言
 * 这是一个只能返回静态资源的Web服务器，能够根据HTTP请求中的URI回送对应的资源。

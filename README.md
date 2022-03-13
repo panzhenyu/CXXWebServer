@@ -33,8 +33,7 @@
 ## 构建
     cd ${WebServer_ROOT_DIR}
     mkdir build && cd build
-    cmake ..
-    cd src/
+    cmake .. && make
 
 ## 启动
     启动redis_server

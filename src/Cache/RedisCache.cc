@@ -1,6 +1,6 @@
 #include <cstring>
 #include "RedisCache.hpp"
-
+#include <iostream>
 /* RedisConnection member functions */
 
 RedisConnection::RedisConnection(): 
@@ -58,8 +58,8 @@ bool RedisConnection::getKey(const key_t& _key, val_t& _retval) {
     if (__context == nullptr) return false;
     if (__lockTimeout.count() == 0) __lock.lock();
     else if (!__lock.try_lock_for(__lockTimeout)) return false;
-    
-    ok = false;
+
+    ok = false; reply = nullptr;
     reply = (redisReply*)redisCommand(__context, "GET %s", _key.c_str());
     if (reply == nullptr) goto out;
     switch (reply->type) {
@@ -85,7 +85,7 @@ bool RedisConnection::putKey(const key_t& _key, const val_t& _val) {
     if (__lockTimeout.count() == 0) __lock.lock();
     else if (!__lock.try_lock_for(__lockTimeout)) return false;
 
-    ok = false;
+    ok = false; reply = nullptr;
     reply = (redisReply*)redisCommand(__context, "SET %s %b", 
         _key.c_str(), _val.data(), _val.length());
     if (reply == nullptr) goto out;

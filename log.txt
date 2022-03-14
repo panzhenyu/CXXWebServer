@@ -139,3 +139,6 @@
     5. server将根据server构造前是否初始化logger来决定要不要设置log文件为默认log文件。
     6. 重新用WebBench测试，mem资源没有明显变化。猜测是磁盘空间不够导致了wsl直接用内存缓存log数据？
     7. main.cc中简单处理了SIGPIPE。
+    8. 一个新问题：
+        1) 在启用redis-cache的条件下，若在使用中关闭redis-server，会出现内存泄漏的情况，经过调试发现这与redisCommand有关，即便free了reply仍然
+        会出现内存泄漏的情况，具体原因不明。

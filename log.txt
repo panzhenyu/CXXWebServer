@@ -130,3 +130,12 @@
     记录日志，随后进行日志持久化操作。
     3. 修正后用100个线程模拟日志记录，目前没发现问题。
     4. 将server中原有用cout输出的部分全部转换为log输出。
+
+2022.3.14
+    1. 原来的AsyncLogger似乎有内存泄露的问题？(因为log文件过大导致？)
+    2. 现在稍微修改了currentAvailable4的判断条件，并将log输出给/dev/null，用8个线程模拟Worker打印日志，没有看到mem资源有明显变化。
+    3. 将默认的log文件设置为/dev/null，防止在wsl下直接占用过多磁盘空间...
+    4. 在AsyncLogger的析构函数中主动唤醒Logger线程，现在当server初始化出错时不需要等timeout再退出了。
+    5. server将根据server构造前是否初始化logger来决定要不要设置log文件为默认log文件。
+    6. 重新用WebBench测试，mem资源没有明显变化。猜测是磁盘空间不够导致了wsl直接用内存缓存log数据？
+    7. main.cc中简单处理了SIGPIPE。

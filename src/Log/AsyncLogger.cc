@@ -24,10 +24,9 @@ void AsyncLogger::run() {
     std::cv_status waitStatus = std::cv_status::no_timeout;
     while (isRunning()) {
         std::unique_lock<buff_mtx_t> bufferLck(__lockBuff);
-        while (!__alternate.size() && waitStatus!=std::cv_status::timeout) {
-            waitStatus = __wait4Flush.wait_for(bufferLck, std::chrono::seconds(__secondTimeout));
-        }
-        __loggerLocal.swap(__alternate);
+        waitStatus = __wait4Flush.wait_for(bufferLck, std::chrono::seconds(__secondTimeout));
+
+        if (__alternate.size()) __loggerLocal.swap(__alternate);
         if (std::cv_status::timeout == waitStatus){
             __loggerLocal.insert(__loggerLocal.end(), std::make_move_iterator(__current.begin()),
                 std::make_move_iterator(__current.end()));
@@ -43,15 +42,14 @@ void AsyncLogger::run() {
 }
 
 bool AsyncLogger::currentAvailable4(ch_buff_t& _buff) {
-    return  __current.empty() || 
-            __current.back().rest() <= _buff.length() || 
-            __current.size() < __overflow;
+    return  __current.size() < __overflow ||
+            __current.back().rest() >= _buff.length();
 }
 
 void AsyncLogger::append2Current(ch_buff_t&& _buff) {
     if (__current.empty() || __current.back().rest()<_buff.length()) {
         __current.push_back(std::move(_buff));
-    } else __current.back().append(_buff.begin(), _buff.cur());
+    } else  __current.back().append(_buff.begin(), _buff.cur());
 }
 
 /*
@@ -78,6 +76,8 @@ server_err_t AsyncLogger::flush2LogFile(buffs_t& _buffs) {
 
 AsyncLogger::~AsyncLogger() {
     if (isRunning()) stop();
+    __wait4Flush.notify_all();
+
     std::lock_guard<buff_mtx_t> bufferLck(__lockBuff);
     std::lock_guard<file_mtx_t> fileLck(__lockLogFile);
     flush2LogFile(__loggerLocal);
@@ -125,9 +125,8 @@ server_err_t AsyncLogger::setLogFile(const std::string& _path) {
 
 server_err_t AsyncLogger::append(ch_buff_t&& _b) {
     if (!isRunning()) return LOG_THREAD_STOPPED;
-
     std::lock_guard<buff_mtx_t> bufferLck(__lockBuff);
-    while (!currentAvailable4(_b)) {
+    if (!currentAvailable4(_b)) {
         for (auto& buffer : __current) __alternate.push_back(std::move(buffer));
         __current.clear();
     }

@@ -87,13 +87,10 @@ server_err_t Server::initResourceAccessor() {
 }
 
 server_err_t Server::initLogger() {
-    server_err_t error;
-
     auto& logger = AsyncLogger::getAsyncLogger();
     if (!logger.isRunning()) return LOG_THREAD_STOPPED;
-    error = AsyncLogger::getAsyncLogger().setLogFile(DEFAULT_LOG);
-
-    return error;
+    if (logger.logFileOn()) return SERVER_OK;
+    return logger.setLogFile(DEFAULT_LOG);
 }
 
 server_err_t Server::initIOWorker() {
@@ -153,11 +150,11 @@ server_err_t Server::init() {
     server_err_t error;
 
     clean();
-    if (SERVER_OK != (error=initListenSocket())) return error;
+    if (SERVER_OK != (error=initLogger())) return error;
     if (SERVER_OK != (error=initRouter())) return error;
     if (SERVER_OK != (error=initResourceAccessor())) return error;
-    if (SERVER_OK != (error=initLogger())) return error;
     if (SERVER_OK != (error=initIOWorker())) return error;
+    if (SERVER_OK != (error=initListenSocket())) return error;
     if (SERVER_OK != (error=initListenWorker())) return error;
     return SERVER_OK;
 }

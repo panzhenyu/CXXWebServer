@@ -9,7 +9,7 @@
 #include "Buffer.hpp"
 #include "../Error.hpp"
 
-#define DEFAULT_LOG "WebServer.log"
+#define DEFAULT_LOG "/dev/null"
 
 /*
  * AsyncLogger
